@@ -10,11 +10,13 @@
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  padding: 16px 24px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
+  height: 48px;
 }
 
 .header-logo {
@@ -38,8 +40,8 @@
 }
 
 .header-logo h1 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   background: linear-gradient(135deg, var(--accent), #a78bfa);
   -webkit-background-clip: text;
   background-clip: text;
@@ -101,10 +103,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 20px;
+  padding: 6px 12px;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -480,8 +482,8 @@
 }
 
 .filter-pill {
-  padding: 6px 16px;
-  font-size: 12px;
+  padding: 4px 12px;
+  font-size: 11px;
   font-weight: 700;
   border: none;
   background: transparent;
@@ -527,10 +529,53 @@
   transform: translateY(0);
 }
 
+.header-charts-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sync-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.btn-sync-icon.active {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border-color: #34d399;
+}
+
+/* Remove old info-bar styles */
+.info-bar {
+  display: none;
+}
+
 .webview-container {
   flex: 1;
+  /* Quan trọng: Giúp container giãn hết chiều cao còn lại */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   position: relative;
-  min-height: 0;
+  width: 100%;
 }
 
 .webview-container webview {

@@ -3,7 +3,6 @@ import './App.css'
 
 const ITEMS_PER_PAGE = 8  // 4 cột x 2 hàng = 8 biểu đồ/trang
 const GRID_COLS = 4       // Giữ nguyên 4 cột
-const GRID_ROWS = 2       // Đổi thành 2 hàng
 const GROUPS_KEY = 'stock-groups'  // Key lưu danh sách nhóm ngành vào localStorage
 const FAVORITES_KEY = 'stock-favorites' // Key lưu danh sách mã yêu thích
 const FILTER_KEY = 'stock-filter-mode' // Key lưu chế độ lọc
@@ -734,12 +733,13 @@ function App() {
 
   return (
     <div className="app">
-      {/* Header */}
+      {/* Consolidated Header */}
       <div className="header">
         <div className="header-logo">
           <div className="logo-icon">📈</div>
-          <h1>Stock Chart Viewer</h1>
+          <h1>Stock Viewer</h1>
         </div>
+
         <div className="filter-pills">
           <button
             className={`filter-pill ${filterMode === 'all' ? 'active' : ''}`}
@@ -754,36 +754,11 @@ function App() {
             Yêu thích
           </button>
         </div>
-        <div className="input-group">
-          {stockCodes.length > 0 ? (
-            <button className="btn btn-secondary" onClick={handleBackToEdit}>
-              ← Quản lý danh mục
-            </button>
-          ) : (
-            <span className="header-summary">
-              {groups.length} ngành · {totalCodesCount} mã
-            </span>
-          )}
-          <button className="btn btn-primary" onClick={handleViewCharts} disabled={totalCodesCount === 0}>
-            📊 Xem biểu đồ
-          </button>
-          <button
-            className={`btn btn-secondary btn-sync ${syncEnabled ? 'active' : ''}`}
-            onClick={() => setSyncEnabled(prev => !prev)}
-            title={syncEnabled ? 'Đồng bộ: BẬT' : 'Đồng bộ: TẮT'}
-          >
-            <span className="sync-dot" />
-            {syncEnabled ? 'Sync ON' : 'Sync OFF'}
-          </button>
-        </div>
-      </div>
 
-      {/* Info Bar - only when viewing charts */}
-      {stockCodes.length > 0 && (
-        <div className="info-bar">
-          <div className="info-left">
+        {stockCodes.length > 0 && (
+          <div className="header-charts-info">
             <span className="stock-count">
-              Tổng: <span>{stockCodes.length}</span> mã
+              <span>{stockCodes.length}</span> mã
             </span>
             {totalPages > 1 && (
               <div className="pagination">
@@ -791,40 +766,64 @@ function App() {
                   ◀
                 </button>
                 <span className="page-info">
-                  Trang <span>{currentPage}</span> / <span>{totalPages}</span>
+                  {currentPage}/{totalPages}
                 </span>
                 <button className="page-btn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
                   ▶
                 </button>
               </div>
             )}
-          </div>
-          <div className="grid-controls">
             <div className="time-filter-btns">
               {['6M', '1Y', '5Y'].map(period => (
                 <button
                   key={period}
                   className="btn btn-filter"
                   onClick={() => handleTimeFilter(period)}
-                  title={`Chuyển tất cả sang ${period} + giá điều chỉnh`}
+                  title={`Chuyển tất cả sang ${period}`}
                   disabled={isCapturing}
                 >
                   {period}
                 </button>
               ))}
             </div>
-            <button
-              className="btn btn-capture"
-              onClick={handleCaptureAll}
-              disabled={isCapturing}
-              title="Chụp ảnh tất cả các trang"
-            >
-              {isCapturing ? '⏳' : '📸'} {isCapturing ? captureStatus : 'Chụp ảnh'}
-            </button>
-            <span className="grid-info">{GRID_COLS}×{GRID_ROWS}</span>
           </div>
+        )}
+
+        <div className="header-actions">
+          {stockCodes.length > 0 ? (
+            <>
+              <button
+                className="btn btn-capture"
+                onClick={handleCaptureAll}
+                disabled={isCapturing}
+                title={isCapturing ? captureStatus : "Chụp ảnh tất cả"}
+              >
+                {isCapturing ? '⏳' : '📸'}
+              </button>
+              <button className="btn btn-secondary" onClick={handleBackToEdit} title="Quản lý danh mục">
+                ✕
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="header-summary">
+                {groups.length} ngành · {totalCodesCount} mã
+              </span>
+              <button className="btn btn-primary" onClick={handleViewCharts} disabled={totalCodesCount === 0}>
+                📊 Xem biểu đồ
+              </button>
+            </>
+          )}
+
+          <button
+            className={`btn btn-sync-icon ${syncEnabled ? 'active' : ''}`}
+            onClick={() => setSyncEnabled(prev => !prev)}
+            title={syncEnabled ? 'Sync: ON' : 'Sync: OFF'}
+          >
+            🔄
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Content */}
       <div className="content">
