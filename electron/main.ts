@@ -1,9 +1,8 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { createRequire } from 'node:module'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 
-const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 process.env.APP_ROOT = path.join(__dirname, '..')
@@ -38,6 +37,38 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }
+
+// ── IPC: Select folder to save screenshots ──
+ipcMain.handle('select-save-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: 'Chọn thư mục lưu ảnh chụp màn hình',
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+})
+
+// ── IPC: Save screenshot PNG to disk ──
+ipcMain.handle('save-screenshot', async (_event, filePath: string, base64Data: string) => {
+  try {
+    const dir = path.dirname(filePath)
+    fs.mkdirSync(dir, { recursive: true })
+    const buffer = Buffer.from(base64Data, 'base64')
+    fs.writeFileSync(filePath, buffer)
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message }
+  }
+})
+
+// ── IPC: Capture the BrowserWindow content area ──
+ipcMain.handle('capture-page', async (_event, rect?: { x: number, y: number, width: number, height: number }) => {
+  if (!win) return null
+  const image = rect
+    ? await win.webContents.capturePage(rect)
+    : await win.webContents.capturePage()
+  return image.toPNG().toString('base64')
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

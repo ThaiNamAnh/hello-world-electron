@@ -414,7 +414,9 @@ function App() {
   })
   const [stockCodes, setStockCodes] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [syncEnabled, setSyncEnabled] = useState(false)
+  const [syncEnabled, setSyncEnabled] = useState(true)
+  const [isCapturing, setIsCapturing] = useState(false)
+  const [captureStatus, setCaptureStatus] = useState('')
 
   const syncEnabledRef = useRef(false)
   const webviewMapRef = useRef<Map<string, any>>(new Map())
@@ -514,6 +516,99 @@ function App() {
 
   const totalCodesCount = groups.reduce((sum, g) => sum + g.codes.length, 0)
 
+  // ── Utilities ──
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  // Apply time filter to all current webviews and wait for chart refresh
+  async function applyTimeFilterAndWait(period: string) {
+    webviewMapRef.current.forEach((wv: any) => {
+      try {
+        wv.executeJavaScript(`
+          (function() {
+            var items = document.querySelectorAll('.stock-period-list .stock-period-item');
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].textContent.trim() === '${period}') {
+                items[i].click();
+                break;
+              }
+            }
+            setTimeout(function() {
+              var btn = document.querySelector('.view-fixed-price .btn-view-fixed-price');
+              if (btn && btn.textContent.trim() === 'Xem giá điều chỉnh') {
+                btn.click();
+              }
+            }, 500);
+          })();
+        `)
+      } catch (e) { console.error(e) }
+    })
+    // Wait for charts to fully render after filter change
+    await delay(3000)
+  }
+
+  // ── Screenshot capture workflow ──
+  async function handleCaptureAll() {
+    // 1. Ask user for save folder
+    const saveFolder = await (window as any).ipcRenderer.invoke('select-save-folder')
+    if (!saveFolder) return
+
+    setIsCapturing(true)
+    const allCodes = groups.flatMap(g => g.codes)
+    const uniqueCodes = [...new Set(allCodes)]
+    const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE)
+    const periods = [
+      { label: '6M', folder: '6 months chart' },
+      { label: '1Y', folder: '1 year chart' },
+      { label: '5Y', folder: '5 years chart' },
+    ]
+
+    try {
+      for (let page = 1; page <= pages; page++) {
+        // 2. Switch to target page
+        setCaptureStatus(`Đang chuyển sang trang ${page}/${pages}...`)
+        setCurrentPage(page)
+        // Wait for webviews to load
+        await delay(5000)
+
+        const pageCodes = uniqueCodes.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+
+        for (const period of periods) {
+          // 3. Apply time filter
+          setCaptureStatus(`Trang ${page}/${pages} - Đang chụp ${period.label}...`)
+          await applyTimeFilterAndWait(period.label)
+
+          // 4. Capture only the .content area
+          const contentEl = document.querySelector('.content')
+          if (contentEl) {
+            const rect = contentEl.getBoundingClientRect()
+            const dpr = window.devicePixelRatio || 1
+            const captureRect = {
+              x: Math.round(rect.x * dpr),
+              y: Math.round(rect.y * dpr),
+              width: Math.round(rect.width * dpr),
+              height: Math.round(rect.height * dpr),
+            }
+            const base64 = await (window as any).ipcRenderer.invoke('capture-page', captureRect)
+            if (base64) {
+              const fileName = `page${page}_${pageCodes.join('_')}.png`
+              const filePath = `${saveFolder}\\${period.folder}\\${fileName}`
+              await (window as any).ipcRenderer.invoke('save-screenshot', filePath, base64)
+            }
+          }
+        }
+      }
+      setCaptureStatus('Hoàn thành! ✅')
+      await delay(2000)
+    } catch (err) {
+      console.error('Capture error:', err)
+      setCaptureStatus('Lỗi khi chụp ảnh ❌')
+      await delay(2000)
+    } finally {
+      setIsCapturing(false)
+      setCaptureStatus('')
+    }
+  }
+
   return (
     <div className="app">
       {/* Header */}
@@ -575,11 +670,20 @@ function App() {
                   className="btn btn-filter"
                   onClick={() => handleTimeFilter(period)}
                   title={`Chuyển tất cả sang ${period} + giá điều chỉnh`}
+                  disabled={isCapturing}
                 >
                   {period}
                 </button>
               ))}
             </div>
+            <button
+              className="btn btn-capture"
+              onClick={handleCaptureAll}
+              disabled={isCapturing}
+              title="Chụp ảnh tất cả các trang"
+            >
+              {isCapturing ? '⏳' : '📸'} {isCapturing ? captureStatus : 'Chụp ảnh'}
+            </button>
             <span className="grid-info">{GRID_COLS}×{GRID_ROWS}</span>
           </div>
         </div>

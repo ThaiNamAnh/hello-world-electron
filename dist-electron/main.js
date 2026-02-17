@@ -1,8 +1,7 @@
-import { app, BrowserWindow } from "electron";
-import { createRequire } from "node:module";
+import { ipcMain, dialog, app, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-createRequire(import.meta.url);
+import fs from "node:fs";
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -28,6 +27,30 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
+ipcMain.handle("select-save-folder", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+    title: "Chọn thư mục lưu ảnh chụp màn hình"
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+ipcMain.handle("save-screenshot", async (_event, filePath, base64Data) => {
+  try {
+    const dir = path.dirname(filePath);
+    fs.mkdirSync(dir, { recursive: true });
+    const buffer = Buffer.from(base64Data, "base64");
+    fs.writeFileSync(filePath, buffer);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+ipcMain.handle("capture-page", async (_event, rect) => {
+  if (!win) return null;
+  const image = rect ? await win.webContents.capturePage(rect) : await win.webContents.capturePage();
+  return image.toPNG().toString("base64");
+});
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
