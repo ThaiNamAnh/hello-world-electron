@@ -4,6 +4,20 @@ import './App.css'
 const ITEMS_PER_PAGE = 8  // 4 cột x 2 hàng = 8 biểu đồ/trang
 const GRID_COLS = 4       // Giữ nguyên 4 cột
 const GRID_ROWS = 2       // Đổi thành 2 hàng
+const GROUPS_KEY = 'stock-groups'  // Key lưu danh sách nhóm ngành vào localStorage
+
+interface StockGroup {
+  id: string
+  name: string
+  codes: string[]
+}
+
+const DEFAULT_GROUPS: StockGroup[] = [
+  { id: '1', name: 'Ngân hàng', codes: ['BID', 'VCB', 'TCB', 'MBB', 'ACB'] },
+  { id: '2', name: 'Chứng khoán', codes: ['SSI', 'VCI', 'HCM', 'VND', 'SHS'] },
+  { id: '3', name: 'Bất động sản', codes: ['VHM', 'VIC', 'NVL', 'KDH', 'DXG'] },
+  { id: '4', name: 'Tiêu dùng', codes: ['MWG', 'FRT', 'PNJ', 'VNM', 'SAB'] },
+]
 
 // CSS to inject into webviews to show ONLY the chart
 const CHART_FOCUS_CSS = `
@@ -109,7 +123,7 @@ const CHART_FOCUS_JS = `
     function focusChart() {
       var chartEl = document.querySelector('.stock-chart');
       if (chartEl) {
-         chartEl.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: #131722 !important; display: flex !important; flex-direction: column !important;';
+         chartEl.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: #555555ff !important; display: flex !important; flex-direction: column !important;';
          
          // QUAN TRỌNG: Trigger sự kiện resize để thư viện Highcharts vẽ lại
          window.dispatchEvent(new Event('resize'));
@@ -148,11 +162,13 @@ function WebviewCard({
   syncEnabledRef,
   webviewMapRef,
   isSyncingRef,
+  onDelete,
 }: {
   code: string
   syncEnabledRef: React.MutableRefObject<boolean>
   webviewMapRef: React.MutableRefObject<Map<string, any>>
   isSyncingRef: React.MutableRefObject<boolean>
+  onDelete: (code: string) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
@@ -287,6 +303,9 @@ function WebviewCard({
           <button className="webview-action-btn" title="Tải lại" onClick={handleReload}>
             🔄
           </button>
+          <button className="webview-action-btn btn-delete" title="Xóa mã này" onClick={() => onDelete(code)}>
+            ✕
+          </button>
         </div>
       </div>
       <div className="webview-container" ref={containerRef}>
@@ -301,8 +320,98 @@ function WebviewCard({
   )
 }
 
+// ── Sector Column Component ──
+function SectorColumn({
+  group,
+  onUpdateName,
+  onDeleteGroup,
+  onAddCode,
+  onDeleteCode,
+}: {
+  group: StockGroup
+  onUpdateName: (id: string, name: string) => void
+  onDeleteGroup: (id: string) => void
+  onAddCode: (id: string, code: string) => void
+  onDeleteCode: (id: string, code: string) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(group.name)
+  const [newCode, setNewCode] = useState('')
+
+  function handleSaveName() {
+    const trimmed = editName.trim()
+    if (trimmed) onUpdateName(group.id, trimmed)
+    setIsEditing(false)
+  }
+
+  function handleAddCode() {
+    const code = newCode.trim().toUpperCase()
+    if (code && /^[A-Z0-9]+$/.test(code)) {
+      onAddCode(group.id, code)
+      setNewCode('')
+    }
+  }
+
+  return (
+    <div className="sector-column">
+      {/* Column Header */}
+      <div className="sector-header">
+        {isEditing ? (
+          <input
+            className="sector-name-input"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            onBlur={handleSaveName}
+            onKeyDown={e => { if (e.key === 'Enter') handleSaveName() }}
+            autoFocus
+          />
+        ) : (
+          <span className="sector-name" onClick={() => { setEditName(group.name); setIsEditing(true) }}>
+            {group.name}
+          </span>
+        )}
+        <button className="sector-delete-btn" title="Xóa nhóm" onClick={() => onDeleteGroup(group.id)}>
+          ✕
+        </button>
+      </div>
+
+      {/* Code Tags */}
+      <div className="sector-codes">
+        {group.codes.map(code => (
+          <div key={code} className="code-tag">
+            <span className="code-tag-text">{code}</span>
+            <button className="code-tag-remove" onClick={() => onDeleteCode(group.id, code)}>✕</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add Code Input */}
+      <div className="sector-add">
+        <input
+          className="sector-add-input"
+          value={newCode}
+          onChange={e => setNewCode(e.target.value.toUpperCase())}
+          onKeyDown={e => { if (e.key === 'Enter') handleAddCode() }}
+          placeholder="Thêm mã..."
+        />
+        <button className="sector-add-btn" onClick={handleAddCode}>+</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Main App ──
 function App() {
-  const [inputValue, setInputValue] = useState('')
+  const [groups, setGroups] = useState<StockGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem(GROUPS_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_GROUPS
+  })
   const [stockCodes, setStockCodes] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [syncEnabled, setSyncEnabled] = useState(false)
@@ -315,19 +424,49 @@ function App() {
     syncEnabledRef.current = syncEnabled
   }, [syncEnabled])
 
+  // Auto-save groups to localStorage
+  useEffect(() => {
+    localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+  }, [groups])
+
   const totalPages = Math.ceil(stockCodes.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const currentCodes = stockCodes.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   const gridRows = Math.ceil(currentCodes.length / GRID_COLS)
 
-  function handleSubmit() {
-    const codes = inputValue
-      .toUpperCase()
-      .split(/[\s,;]+/)
-      .map(c => c.trim())
-      .filter(c => c.length > 0 && /^[A-Z0-9]+$/.test(c))
+  // ── Group CRUD ──
+  function handleAddGroup() {
+    const newGroup: StockGroup = { id: String(Date.now()), name: 'Ngành mới', codes: [] }
+    setGroups(prev => [...prev, newGroup])
+  }
 
-    const uniqueCodes = [...new Set(codes)]
+  function handleDeleteGroup(id: string) {
+    setGroups(prev => prev.filter(g => g.id !== id))
+  }
+
+  function handleUpdateGroupName(id: string, name: string) {
+    setGroups(prev => prev.map(g => g.id === id ? { ...g, name } : g))
+  }
+
+  function handleAddCodeToGroup(groupId: string, code: string) {
+    setGroups(prev => prev.map(g => {
+      if (g.id !== groupId) return g
+      if (g.codes.includes(code)) return g
+      return { ...g, codes: [...g.codes, code] }
+    }))
+  }
+
+  function handleDeleteCodeFromGroup(groupId: string, code: string) {
+    setGroups(prev => prev.map(g => {
+      if (g.id !== groupId) return g
+      return { ...g, codes: g.codes.filter(c => c !== code) }
+    }))
+  }
+
+  // ── Chart viewing ──
+  function handleViewCharts() {
+    const allCodes = groups.flatMap(g => g.codes)
+    const uniqueCodes = [...new Set(allCodes)]
     if (uniqueCodes.length > 0) {
       webviewMapRef.current.clear()
       setStockCodes(uniqueCodes)
@@ -335,12 +474,45 @@ function App() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
+  function handleBackToEdit() {
+    webviewMapRef.current.clear()
+    setStockCodes([])
+    setCurrentPage(1)
   }
+
+  function handleDeleteCode(code: string) {
+    webviewMapRef.current.delete(code)
+    setStockCodes(prev => prev.filter(c => c !== code))
+  }
+
+  // ── Time filter: click period button + "Xem giá điều chỉnh" in all webviews ──
+  function handleTimeFilter(period: string) {
+    webviewMapRef.current.forEach((wv: any) => {
+      try {
+        wv.executeJavaScript(`
+          (function() {
+            // 1. Click the time period button (6M, 1Y, 5Y)
+            var items = document.querySelectorAll('.stock-period-list .stock-period-item');
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].textContent.trim() === '${period}') {
+                items[i].click();
+                break;
+              }
+            }
+            // 2. Click "Xem giá điều chỉnh" button
+            setTimeout(function() {
+              var btn = document.querySelector('.view-fixed-price .btn-view-fixed-price');
+              if (btn && btn.textContent.trim() === 'Xem giá điều chỉnh') {
+                btn.click();
+              }
+            }, 500);
+          })();
+        `)
+      } catch (e) { console.error(e) }
+    })
+  }
+
+  const totalCodesCount = groups.reduce((sum, g) => sum + g.codes.length, 0)
 
   return (
     <div className="app">
@@ -351,14 +523,16 @@ function App() {
           <h1>Stock Chart Viewer</h1>
         </div>
         <div className="input-group">
-          <input
-            className="stock-input"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Nhập mã CK, phân cách bằng dấu phẩy (VD: BID, VCB, MWG, HPG...)"
-          />
-          <button className="btn btn-primary" onClick={handleSubmit}>
+          {stockCodes.length > 0 ? (
+            <button className="btn btn-secondary" onClick={handleBackToEdit}>
+              ← Quản lý danh mục
+            </button>
+          ) : (
+            <span className="header-summary">
+              {groups.length} ngành · {totalCodesCount} mã
+            </span>
+          )}
+          <button className="btn btn-primary" onClick={handleViewCharts} disabled={totalCodesCount === 0}>
             📊 Xem biểu đồ
           </button>
           <button
@@ -372,7 +546,7 @@ function App() {
         </div>
       </div>
 
-      {/* Info Bar */}
+      {/* Info Bar - only when viewing charts */}
       {stockCodes.length > 0 && (
         <div className="info-bar">
           <div className="info-left">
@@ -394,6 +568,18 @@ function App() {
             )}
           </div>
           <div className="grid-controls">
+            <div className="time-filter-btns">
+              {['6M', '1Y', '5Y'].map(period => (
+                <button
+                  key={period}
+                  className="btn btn-filter"
+                  onClick={() => handleTimeFilter(period)}
+                  title={`Chuyển tất cả sang ${period} + giá điều chỉnh`}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
             <span className="grid-info">{GRID_COLS}×{GRID_ROWS}</span>
           </div>
         </div>
@@ -402,25 +588,24 @@ function App() {
       {/* Content */}
       <div className="content">
         {stockCodes.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📊</div>
-            <h2>Theo dõi biểu đồ chứng khoán</h2>
-            <p>
-              Nhập các mã chứng khoán vào ô phía trên để xem biểu đồ từ 24hmoney.vn.
-              Mỗi trang hiển thị tối đa {ITEMS_PER_PAGE} mã. Bật Sync để đồng bộ thao tác.
-            </p>
-            <div className="sample-codes">
-              {['BID', 'VCB', 'MWG', 'HPG', 'FPT', 'VNM'].map(code => (
-                <span
-                  key={code}
-                  className="sample-code"
-                  onClick={() => setInputValue(
-                    'BID, VCB, MWG, HPG, FPT, VNM, TCB, VPB, MBB, ACB, STB, SSI, VHM, VIC, GAS, PLX, PNJ, REE, DGC, PC1'
-                  )}
-                >
-                  {code}
-                </span>
+          /* ── Sector Columns Editor ── */
+          <div className="sector-editor">
+            <div className="sector-columns">
+              {groups.map(group => (
+                <SectorColumn
+                  key={group.id}
+                  group={group}
+                  onUpdateName={handleUpdateGroupName}
+                  onDeleteGroup={handleDeleteGroup}
+                  onAddCode={handleAddCodeToGroup}
+                  onDeleteCode={handleDeleteCodeFromGroup}
+                />
               ))}
+              {/* Add Group Button */}
+              <button className="sector-add-column" onClick={handleAddGroup}>
+                <span className="sector-add-column-icon">＋</span>
+                <span>Thêm ngành</span>
+              </button>
             </div>
           </div>
         ) : (
@@ -435,6 +620,7 @@ function App() {
                 syncEnabledRef={syncEnabledRef}
                 webviewMapRef={webviewMapRef}
                 isSyncingRef={isSyncingRef}
+                onDelete={handleDeleteCode}
               />
             ))}
           </div>
