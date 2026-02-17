@@ -535,6 +535,7 @@ function App() {
       // Update stockCodes if they've changed
       setStockCodes(prev => {
         if (JSON.stringify(prev) !== JSON.stringify(uniqueCodes)) {
+          setCurrentPage(1)
           return uniqueCodes
         }
         return prev
@@ -675,8 +676,7 @@ function App() {
     if (!saveFolder) return
 
     setIsCapturing(true)
-    const allCodes = groups.flatMap(g => g.codes)
-    const uniqueCodes = [...new Set(allCodes)]
+    const uniqueCodes = [...stockCodes] // Use currently filtered codes
     const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE)
     const periods = [
       { label: '6M', folder: '6 months chart' },
