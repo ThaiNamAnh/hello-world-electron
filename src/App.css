@@ -141,6 +141,11 @@
   border-color: var(--border-focus);
 }
 
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
 .btn-sync {
   position: relative;
   overflow: hidden;
@@ -626,24 +631,97 @@
 
 /* ====== Sector Editor ====== */
 .sector-editor {
-  height: 100%;
+  flex: 1;
   display: flex;
-  align-items: stretch;
-  padding: 8px 0;
+  flex-direction: column;
+  padding: 12px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.sector-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.json-import-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.json-import-box textarea {
+  width: 100%;
+  height: 120px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+}
+
+.json-import-box textarea:focus {
+  border-color: var(--border-focus);
+}
+
+.json-import-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.json-example-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.json-example-code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: #a78bfa;
+  margin: 0 0 12px 0;
+  overflow-x: auto;
+  border: 1px solid rgba(167, 139, 250, 0.2);
 }
 
 .sector-columns {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  /* Auto-fill columns, with a minimum of 200px and a maximum of 6 columns via container width and minmax */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
   width: 100%;
-  overflow-x: auto;
-  padding-bottom: 8px;
+  overflow-y: auto;
+  /* Enable vertical scroll if many rows */
+  padding-bottom: 20px;
+}
+
+/* Limit to 6 columns by putting a max-width on the columns if needed, 
+   but or simply rely on standard desktop widths. 
+   To strictly force 6 max, we can use a media query or a different repeat logic. */
+@media (min-width: 1400px) {
+  .sector-columns {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 .sector-column {
-  min-width: 200px;
-  max-width: 260px;
-  flex: 1;
+  min-height: 200px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
@@ -792,6 +870,28 @@
   border-color: rgba(251, 191, 36, 0.4);
 }
 
+.duplicate-warning {
+  font-size: 12px;
+  cursor: help;
+  margin-left: 2px;
+  filter: drop-shadow(0 0 2px rgba(255, 165, 0, 0.5));
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
 .code-tag-text {
   font-size: 12px;
   font-weight: 600;
@@ -879,14 +979,13 @@
 
 /* Add Column Button */
 .sector-add-column {
-  min-width: 160px;
-  flex-shrink: 0;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: transparent;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
   border: 2px dashed var(--border-color);
   border-radius: var(--radius);
   color: var(--text-muted);

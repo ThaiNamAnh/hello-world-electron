@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { jsPDF } from 'jspdf'
 import './App.css'
 
@@ -7,6 +7,17 @@ const GRID_COLS = 4       // Giữ nguyên 4 cột
 const GROUPS_KEY = 'stock-groups'  // Key lưu danh sách nhóm ngành vào localStorage
 const FAVORITES_KEY = 'stock-favorites' // Key lưu danh sách mã yêu thích
 const FILTER_KEY = 'stock-filter-mode' // Key lưu chế độ lọc
+
+const JSON_EXAMPLE = `[
+  {
+    "name": "Ngân hàng",
+    "codes": ["BID", "VCB", "TCB"]
+  },
+  {
+    "name": "Chứng khoán",
+    "codes": ["SSI", "VCI", "VND"]
+  }
+]`
 
 interface StockGroup {
   id: string
@@ -209,6 +220,7 @@ function WebviewCard({
   isFavorite,
   onToggleFavorite,
   onDelete,
+  isDuplicate,
 }: {
   code: string
   syncEnabledRef: React.MutableRefObject<boolean>
@@ -217,6 +229,7 @@ function WebviewCard({
   isFavorite: boolean
   onToggleFavorite: (code: string) => void
   onDelete: (code: string) => void
+  isDuplicate: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
@@ -355,6 +368,9 @@ function WebviewCard({
             {isFavorite ? '★' : '☆'}
           </span>
           {code}
+          {isDuplicate && (
+            <span className="duplicate-warning" title="Mã này bị trùng lặp ở nhóm khác">⚠️</span>
+          )}
         </div>
         <div className="webview-actions">
           <button className="webview-action-btn" title="Tải lại" onClick={handleReload}>
@@ -386,6 +402,7 @@ function SectorColumn({
   onDeleteGroup,
   onAddCode,
   onDeleteCode,
+  duplicateCodes,
 }: {
   group: StockGroup
   favoriteCodes: string[]
@@ -394,6 +411,7 @@ function SectorColumn({
   onDeleteGroup: (id: string) => void
   onAddCode: (id: string, code: string) => void
   onDeleteCode: (id: string, code: string) => void
+  duplicateCodes: Set<string>
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(group.name)
@@ -451,6 +469,9 @@ function SectorColumn({
                   {isFavorite ? '★' : '☆'}
                 </span>
                 <span className="code-tag-text">{code}</span>
+                {duplicateCodes.has(code) && (
+                  <span className="duplicate-warning" title="Mã này bị trùng lặp ở nhóm khác">⚠️</span>
+                )}
               </div>
               <button className="code-tag-remove" onClick={() => onDeleteCode(group.id, code)}>✕</button>
             </div>
@@ -501,6 +522,8 @@ function App() {
   const [syncEnabled, setSyncEnabled] = useState(true)
   const [isCapturing, setIsCapturing] = useState(false)
   const [captureStatus, setCaptureStatus] = useState('')
+  const [isImportingJson, setIsImportingJson] = useState(false)
+  const [importJsonText, setImportJsonText] = useState('')
 
   const syncEnabledRef = useRef(false)
   const webviewMapRef = useRef<Map<string, any>>(new Map())
@@ -549,6 +572,18 @@ function App() {
   const currentCodes = stockCodes.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   const gridRows = Math.ceil(currentCodes.length / GRID_COLS)
 
+  const duplicateCodes = useMemo(() => {
+    const counts = new Map<string, number>()
+    groups.forEach(g => {
+      g.codes.forEach(c => counts.set(c, (counts.get(c) || 0) + 1))
+    })
+    const duplicates = new Set<string>()
+    counts.forEach((count, code) => {
+      if (count > 1) duplicates.add(code)
+    })
+    return duplicates
+  }, [groups])
+
   // ── Group CRUD ──
   function handleAddGroup() {
     const newGroup: StockGroup = { id: String(Date.now()), name: 'Ngành mới', codes: [] }
@@ -582,6 +617,42 @@ function App() {
       if (g.id !== groupId) return g
       return { ...g, codes: g.codes.filter(c => c !== code) }
     }))
+  }
+
+  function handleImportJson() {
+    try {
+      const parsed = JSON.parse(importJsonText)
+      if (!Array.isArray(parsed)) {
+        alert('Dữ liệu phải là một mảng []')
+        return
+      }
+
+      // Basic validation
+      const isValid = parsed.every(item =>
+        item &&
+        typeof item.name === 'string' &&
+        Array.isArray(item.codes)
+      )
+
+      if (!isValid) {
+        alert('Dữ liệu không đúng định dạng. Mỗi nhóm cần có "name" (string) và "codes" (array).')
+        return
+      }
+
+      // Re-generate IDs to avoid conflicts
+      const newGroups: StockGroup[] = parsed.map((g, idx) => ({
+        id: String(Date.now() + idx),
+        name: g.name,
+        codes: g.codes.map((c: any) => String(c).toUpperCase())
+      }))
+
+      setGroups(prev => [...prev, ...newGroups])
+      setIsImportingJson(false)
+      setImportJsonText('')
+      alert('Đã nhập dữ liệu thành công!')
+    } catch (err) {
+      alert('JSON không hợp lệ: ' + (err as Error).message)
+    }
   }
 
   // ── Chart viewing ──
@@ -936,6 +1007,42 @@ function App() {
         {stockCodes.length === 0 ? (
           /* ── Sector Columns Editor ── */
           <div className="sector-editor">
+            <div className="sector-editor-actions">
+              <button
+                className={`btn btn-secondary ${isImportingJson ? 'active' : ''}`}
+                onClick={() => setIsImportingJson(prev => !prev)}
+              >
+                {isImportingJson ? '✕ Hủy' : '📥 Nhập JSON'}
+              </button>
+            </div>
+
+            {isImportingJson && (
+              <div className="json-import-box">
+                <div className="json-example-header">
+                  <span>Ví dụ định dạng (JSON):</span>
+                  <button
+                    className="btn btn-secondary btn-xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON_EXAMPLE)
+                      alert('Đã copy mẫu JSON!')
+                    }}
+                  >
+                    📋 Copy mẫu
+                  </button>
+                </div>
+                <pre className="json-example-code">{JSON_EXAMPLE}</pre>
+
+                <textarea
+                  placeholder='Dán JSON vào đây...'
+                  value={importJsonText}
+                  onChange={(e) => setImportJsonText(e.target.value)}
+                />
+                <div className="json-import-actions">
+                  <button className="btn btn-primary" onClick={handleImportJson}>Xác nhận Nhập</button>
+                </div>
+              </div>
+            )}
+
             <div className="sector-columns">
               {groups.map(group => (
                 <SectorColumn
@@ -947,6 +1054,7 @@ function App() {
                   onDeleteGroup={handleDeleteGroup}
                   onAddCode={handleAddCodeToGroup}
                   onDeleteCode={handleDeleteCodeFromGroup}
+                  duplicateCodes={duplicateCodes}
                 />
               ))}
               {/* Add Group Button */}
@@ -971,6 +1079,7 @@ function App() {
                 isFavorite={favoriteCodes.includes(code)}
                 onToggleFavorite={handleToggleFavorite}
                 onDelete={handleDeleteCode}
+                isDuplicate={duplicateCodes.has(code)}
               />
             ))}
           </div>
