@@ -343,7 +343,7 @@ function WebviewCard({
   }
 
   return (
-    <div className="webview-card">
+    <div className="webview-card" data-code={code}>
       <div className="webview-card-header">
         <div
           className="stock-code-label clickable"
@@ -731,6 +731,78 @@ function App() {
     }
   }
 
+  async function handleCaptureIndividual() {
+    // 1. Ask user for save folder
+    const saveFolder = await (window as any).ipcRenderer.invoke('select-save-folder')
+    if (!saveFolder) return
+
+    setIsCapturing(true)
+    const uniqueCodes = [...stockCodes] // Respect current filters
+    const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE)
+    const periods = [
+      { label: '6M', fileSuffix: '6 tháng' },
+      { label: '1Y', fileSuffix: '1 năm' },
+      { label: '5Y', fileSuffix: '5 năm' },
+    ]
+
+    try {
+      for (let page = 1; page <= pages; page++) {
+        // Switch to target page
+        setCaptureStatus(`Chuyển sang trang ${page}/${pages}...`)
+        setCurrentPage(page)
+        // Wait for webviews to load
+        await delay(5000)
+
+        // Codes on current page
+        const startIdx = (page - 1) * ITEMS_PER_PAGE
+        const endIdx = Math.min(page * ITEMS_PER_PAGE, uniqueCodes.length)
+        const pageCodes = uniqueCodes.slice(startIdx, endIdx)
+
+
+        for (const period of periods) {
+          // Apply time filter globally
+          setCaptureStatus(`Trang ${page}/${pages} - Đang chuyển mốc ${period.fileSuffix}...`)
+          await applyTimeFilterAndWait(period.label)
+
+          // Capture each stock code individually
+          for (const code of pageCodes) {
+            setCaptureStatus(`Trang ${page}/${pages} - Đang chụp [${code}] mốc ${period.fileSuffix}...`)
+
+            const cardEl = document.querySelector(`.webview-card[data-code="${code}"]`)
+            const webviewEl = cardEl?.querySelector('webview')
+
+            if (webviewEl) {
+              const rect = webviewEl.getBoundingClientRect()
+              const dpr = window.devicePixelRatio || 1
+              const captureRect = {
+                x: Math.round(rect.x * dpr),
+                y: Math.round(rect.y * dpr),
+                width: Math.round(rect.width * dpr),
+                height: Math.round(rect.height * dpr),
+              }
+
+              const base64 = await (window as any).ipcRenderer.invoke('capture-page', captureRect)
+              if (base64) {
+                const fileName = `${code}_${period.fileSuffix}.png`
+                const filePath = `${saveFolder}\\${code}\\${fileName}`
+                await (window as any).ipcRenderer.invoke('save-screenshot', filePath, base64)
+              }
+            }
+          }
+        }
+      }
+      setCaptureStatus('Hoàn thành! ✅')
+      await delay(2000)
+    } catch (err) {
+      console.error('Individual capture error:', err)
+      setCaptureStatus('Lỗi khi chụp ❌')
+      await delay(2000)
+    } finally {
+      setIsCapturing(false)
+      setCaptureStatus('')
+    }
+  }
+
   return (
     <div className="app">
       {/* Consolidated Header */}
@@ -798,7 +870,15 @@ function App() {
                 disabled={isCapturing}
                 title={isCapturing ? captureStatus : "Chụp ảnh tất cả"}
               >
-                {isCapturing ? '⏳' : '📸'}
+                {isCapturing ? '⏳' : '📸 Trang'}
+              </button>
+              <button
+                className="btn btn-capture"
+                onClick={handleCaptureIndividual}
+                disabled={isCapturing}
+                title={isCapturing ? captureStatus : "Chụp ảnh từng mã riêng biệt"}
+              >
+                {isCapturing ? '⏳' : '📸 Mỗi mã'}
               </button>
               <button className="btn btn-secondary" onClick={handleBackToEdit} title="Quản lý danh mục">
                 ✕
