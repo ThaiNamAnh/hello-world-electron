@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { jsPDF } from 'jspdf'
 import './App.css'
 
 const ITEMS_PER_PAGE = 8  // 4 cột x 2 hàng = 8 biểu đồ/trang
@@ -739,6 +740,7 @@ function App() {
     setIsCapturing(true)
     const uniqueCodes = [...stockCodes] // Respect current filters
     const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE)
+    const pdfDocs: { [key: string]: jsPDF } = {}
     const periods = [
       { label: '6M', fileSuffix: '6 tháng' },
       { label: '1Y', fileSuffix: '1 năm' },
@@ -783,11 +785,35 @@ function App() {
 
               const base64 = await (window as any).ipcRenderer.invoke('capture-page', captureRect)
               if (base64) {
+                // Save individual image
                 const fileName = `${code}_${period.fileSuffix}.png`
                 const filePath = `${saveFolder}\\${code}\\${fileName}`
                 await (window as any).ipcRenderer.invoke('save-screenshot', filePath, base64)
+
+                // Add to PDF
+                if (!pdfDocs[code]) {
+                  pdfDocs[code] = new jsPDF({
+                    orientation: rect.width > rect.height ? 'l' : 'p',
+                    unit: 'px',
+                    format: [rect.width, rect.height]
+                  })
+                } else {
+                  pdfDocs[code].addPage([rect.width, rect.height], rect.width > rect.height ? 'l' : 'p')
+                }
+                pdfDocs[code].addImage(`data:image/png;base64,${base64}`, 'PNG', 0, 0, rect.width, rect.height)
               }
             }
+          }
+        }
+
+        // Save PDFs for codes on this page after all timeframes are done
+        for (const code of pageCodes) {
+          if (pdfDocs[code]) {
+            setCaptureStatus(`Đang xuất file PDF cho [${code}]...`)
+            const pdfBase64 = pdfDocs[code].output('datauristring').split(',')[1]
+            const pdfPath = `${saveFolder}\\${code}.pdf`
+            await (window as any).ipcRenderer.invoke('save-screenshot', pdfPath, pdfBase64)
+            delete pdfDocs[code]
           }
         }
       }
