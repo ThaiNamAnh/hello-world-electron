@@ -5,6 +5,8 @@ const ITEMS_PER_PAGE = 8  // 4 cột x 2 hàng = 8 biểu đồ/trang
 const GRID_COLS = 4       // Giữ nguyên 4 cột
 const GRID_ROWS = 2       // Đổi thành 2 hàng
 const GROUPS_KEY = 'stock-groups'  // Key lưu danh sách nhóm ngành vào localStorage
+const FAVORITES_KEY = 'stock-favorites' // Key lưu danh sách mã yêu thích
+const FILTER_KEY = 'stock-filter-mode' // Key lưu chế độ lọc
 
 interface StockGroup {
   id: string
@@ -162,12 +164,16 @@ function WebviewCard({
   syncEnabledRef,
   webviewMapRef,
   isSyncingRef,
+  isFavorite,
+  onToggleFavorite,
   onDelete,
 }: {
   code: string
   syncEnabledRef: React.MutableRefObject<boolean>
   webviewMapRef: React.MutableRefObject<Map<string, any>>
   isSyncingRef: React.MutableRefObject<boolean>
+  isFavorite: boolean
+  onToggleFavorite: (code: string) => void
   onDelete: (code: string) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -298,7 +304,16 @@ function WebviewCard({
   return (
     <div className="webview-card">
       <div className="webview-card-header">
-        <span className="stock-code-label">{code}</span>
+        <div
+          className="stock-code-label clickable"
+          onClick={() => onToggleFavorite(code)}
+          title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+        >
+          <span className={`favorite-star ${isFavorite ? 'active' : ''}`}>
+            {isFavorite ? '★' : '☆'}
+          </span>
+          {code}
+        </div>
         <div className="webview-actions">
           <button className="webview-action-btn" title="Tải lại" onClick={handleReload}>
             🔄
@@ -323,12 +338,16 @@ function WebviewCard({
 // ── Sector Column Component ──
 function SectorColumn({
   group,
+  favoriteCodes,
+  onToggleFavorite,
   onUpdateName,
   onDeleteGroup,
   onAddCode,
   onDeleteCode,
 }: {
   group: StockGroup
+  favoriteCodes: string[]
+  onToggleFavorite: (code: string) => void
   onUpdateName: (id: string, name: string) => void
   onDeleteGroup: (id: string) => void
   onAddCode: (id: string, code: string) => void
@@ -377,12 +396,24 @@ function SectorColumn({
 
       {/* Code Tags */}
       <div className="sector-codes">
-        {group.codes.map(code => (
-          <div key={code} className="code-tag">
-            <span className="code-tag-text">{code}</span>
-            <button className="code-tag-remove" onClick={() => onDeleteCode(group.id, code)}>✕</button>
-          </div>
-        ))}
+        {group.codes.map(code => {
+          const isFavorite = favoriteCodes.includes(code)
+          return (
+            <div key={code} className={`code-tag ${isFavorite ? 'is-favorite' : ''}`}>
+              <div
+                className="code-tag-main clickable"
+                onClick={() => onToggleFavorite(code)}
+                title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+              >
+                <span className={`favorite-star ${isFavorite ? 'active' : ''}`}>
+                  {isFavorite ? '★' : '☆'}
+                </span>
+                <span className="code-tag-text">{code}</span>
+              </div>
+              <button className="code-tag-remove" onClick={() => onDeleteCode(group.id, code)}>✕</button>
+            </div>
+          )
+        })}
       </div>
 
       {/* Add Code Input */}
@@ -412,6 +443,17 @@ function App() {
     } catch { /* ignore */ }
     return DEFAULT_GROUPS
   })
+  const [favoriteCodes, setFavoriteCodes] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(FAVORITES_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch { /* ignore */ }
+    return []
+  })
+  const [filterMode, setFilterMode] = useState<'all' | 'favorites'>(() => {
+    const saved = localStorage.getItem(FILTER_KEY)
+    return (saved === 'favorites' || saved === 'all') ? saved : 'all'
+  })
   const [stockCodes, setStockCodes] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [syncEnabled, setSyncEnabled] = useState(true)
@@ -430,6 +472,34 @@ function App() {
   useEffect(() => {
     localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
   }, [groups])
+
+  useEffect(() => {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoriteCodes))
+  }, [favoriteCodes])
+
+  useEffect(() => {
+    localStorage.setItem(FILTER_KEY, filterMode)
+  }, [filterMode])
+
+  // Reactive filtering: Update stockCodes when filterMode or favorites change while in chart view
+  useEffect(() => {
+    if (stockCodes.length > 0) {
+      const allCodes = groups.flatMap(g => g.codes)
+      let uniqueCodes = [...new Set(allCodes)]
+
+      if (filterMode === 'favorites') {
+        uniqueCodes = uniqueCodes.filter(code => favoriteCodes.includes(code))
+      }
+
+      // Update stockCodes if they've changed
+      setStockCodes(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(uniqueCodes)) {
+          return uniqueCodes
+        }
+        return prev
+      })
+    }
+  }, [filterMode, favoriteCodes, groups, stockCodes.length])
 
   const totalPages = Math.ceil(stockCodes.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
@@ -458,6 +528,12 @@ function App() {
     }))
   }
 
+  function handleToggleFavorite(code: string) {
+    setFavoriteCodes(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    )
+  }
+
   function handleDeleteCodeFromGroup(groupId: string, code: string) {
     setGroups(prev => prev.map(g => {
       if (g.id !== groupId) return g
@@ -468,7 +544,12 @@ function App() {
   // ── Chart viewing ──
   function handleViewCharts() {
     const allCodes = groups.flatMap(g => g.codes)
-    const uniqueCodes = [...new Set(allCodes)]
+    let uniqueCodes = [...new Set(allCodes)]
+
+    if (filterMode === 'favorites') {
+      uniqueCodes = uniqueCodes.filter(code => favoriteCodes.includes(code))
+    }
+
     if (uniqueCodes.length > 0) {
       webviewMapRef.current.clear()
       setStockCodes(uniqueCodes)
@@ -617,6 +698,20 @@ function App() {
           <div className="logo-icon">📈</div>
           <h1>Stock Chart Viewer</h1>
         </div>
+        <div className="filter-pills">
+          <button
+            className={`filter-pill ${filterMode === 'all' ? 'active' : ''}`}
+            onClick={() => setFilterMode('all')}
+          >
+            Tất cả
+          </button>
+          <button
+            className={`filter-pill ${filterMode === 'favorites' ? 'active' : ''}`}
+            onClick={() => setFilterMode('favorites')}
+          >
+            Yêu thích
+          </button>
+        </div>
         <div className="input-group">
           {stockCodes.length > 0 ? (
             <button className="btn btn-secondary" onClick={handleBackToEdit}>
@@ -699,6 +794,8 @@ function App() {
                 <SectorColumn
                   key={group.id}
                   group={group}
+                  favoriteCodes={favoriteCodes}
+                  onToggleFavorite={handleToggleFavorite}
                   onUpdateName={handleUpdateGroupName}
                   onDeleteGroup={handleDeleteGroup}
                   onAddCode={handleAddCodeToGroup}
@@ -724,6 +821,8 @@ function App() {
                 syncEnabledRef={syncEnabledRef}
                 webviewMapRef={webviewMapRef}
                 isSyncingRef={isSyncingRef}
+                isFavorite={favoriteCodes.includes(code)}
+                onToggleFavorite={handleToggleFavorite}
                 onDelete={handleDeleteCode}
               />
             ))}
