@@ -21,7 +21,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
   { id: '4', name: 'Tiêu dùng', codes: ['MWG', 'FRT', 'PNJ', 'VNM', 'SAB'] },
 ]
 
-// CSS to inject into webviews to show ONLY the chart
+// CSS to inject into webviews to show ONLY the chart AND the Detail Box
 const CHART_FOCUS_CSS = `
   /* 1. Reset cơ bản */
   html, body {
@@ -31,33 +31,84 @@ const CHART_FOCUS_CSS = `
   }
 
   /* 2. Ẩn các thành phần rác của trang gốc */
+  /* LƯU Ý: Đã xóa .stock-overview khỏi danh sách ẩn để xử lý riêng bên dưới */
   header, footer, nav,
   [class*="ads"], [class*="banner"],
   .mess_support, .zalo-chat-widget, #chat-widget-container,
   .box-contact, .header-mobile,
-  .stock-overview, .financial-report-box, .foreign-transactions, .list-table {
+  .financial-report-box, .foreign-transactions, .list-table {
     display: none !important;
     z-index: -9999 !important;
   }
 
-  /* 3. Cấu hình container chính */
-  .stock-chart {
+  /* 3. XỬ LÝ DETAIL BOX (Header thông tin giá) */
+  .stock-overview {
+    display: block !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
+    width: 100% !important;
+    height: 85px !important; /* Chiều cao cố định cho phần thông tin */
+    background-color: #ffffffff !important;
+    z-index: 2147483648 !important; /* Lớp cao nhất */
+    padding: 0 !important;
+    margin: 0 !important;
+    border-bottom: 1px solid #2a2e39 !important;
+    overflow: hidden !important;
+  }
+
+  /* Ẩn tất cả các con của stock-overview (như list-table, summary...) TRỪ detail-box */
+  .stock-overview > div:not(.detail-box):not(#detail-box) {
+    display: none !important;
+  }
+
+  /* Style cho detail-box để hiển thị đẹp gọn */
+  .detail-box, #detail-box {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: start !important;
+    height: 100% !important;
+    background: transparent !important;
+  }
+
+  .detail-box .info-box {
+    transform: scale(0.8) !important;
+  }
+
+  .detail-box .info-box .action-box {
+    display: none !important;
+  }
+
+  .detail-box .price-box .price-detail {
+    display: flex !important;
+    flex-direction: column !important;
+    transform: scale(0.8) !important;
+  }
+
+  .detail-box .extra-info-box {
+    display: flex !important;
+    flex-direction: column !important;
+    transform: scale(0.8) !important;
+  }
+
+  /* 4. Cấu hình container chart (Đẩy xuống dưới detail-box) */
+  .stock-chart {
+    position: fixed !important;
+    top: 85px !important; /* Đẩy xuống bằng chiều cao header */
+    left: 0 !important;
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(100vh - 85px) !important; /* Trừ đi phần header */
     z-index: 2147483647 !important;
-    background-color: #131722 !important; /* Nền tối đồng bộ */
+    background-color: #ffffffff !important; /* Nền tối đồng bộ */
     padding: 4px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
   }
 
-  /* 4. XỬ LÝ HEADER GIÁ & NÚT THỜI GIAN (Fix lỗi mất dữ liệu khi full màn) */
+  /* 5. XỬ LÝ HEADER GIÁ & NÚT THỜI GIAN (Fix lỗi mất dữ liệu khi full màn) */
   
-  /* 4.1. Hiện dòng thông tin giá (được nhận diện qua style justify-content) */
+  /* 5.1. Hiện dòng thông tin giá (được nhận diện qua style justify-content) */
   .stock-chart > div[style*="justify-content"] {
     display: flex !important;
     flex-shrink: 0 !important;
@@ -68,7 +119,7 @@ const CHART_FOCUS_CSS = `
     font-size: 13px !important; /* Chỉnh lại font cho gọn */
   }
 
-  /* 4.2. Hiện lại .stock-box-head nhưng chỉnh sửa để chỉ hiện nút lọc (1D, 1W...) */
+  /* 5.2. Hiện lại .stock-box-head nhưng chỉnh sửa để chỉ hiện nút lọc (1D, 1W...) */
   .stock-chart > .stock-box-head {
     display: flex !important; /* Bắt buộc hiện lại */
     align-items: center !important;
@@ -80,7 +131,7 @@ const CHART_FOCUS_CSS = `
     min-height: 0 !important;
   }
 
-  /* Ẩn tiêu đề to (Ví dụ: VNM - Vinamilk...) bên trong header */
+  /* Ẩn tiêu đề to (Ví dụ: VNM - Vinamilk...) bên trong header chart vì đã có Detail Box ở trên */
   .stock-chart > .stock-box-head > .title-stock, 
   .stock-chart > .stock-box-head > h2,
   .stock-chart > .stock-box-head > span {
@@ -94,7 +145,7 @@ const CHART_FOCUS_CSS = `
     transform-origin: right center;
   }
 
-  /* 4.3. Fix Highcharts Container */
+  /* 5.3. Fix Highcharts Container */
   #chart-sync-container {
     flex: 1 !important;
     display: flex !important;
@@ -123,23 +174,14 @@ const CHART_FOCUS_CSS = `
 const CHART_FOCUS_JS = `
   (function() {
     function focusChart() {
+      // Logic cũ: tìm .stock-chart và ép style (đã được CSS handle phần lớn, JS chỉ hỗ trợ trigger resize)
       var chartEl = document.querySelector('.stock-chart');
-      if (chartEl) {
-         chartEl.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: #555555ff !important; display: flex !important; flex-direction: column !important;';
-         
-         // QUAN TRỌNG: Trigger sự kiện resize để thư viện Highcharts vẽ lại
-         window.dispatchEvent(new Event('resize'));
-         
-         // Trigger resize lên chính element của Highcharts (nếu có)
-         var highchartsContainer = document.querySelector('.highcharts-container');
-         if (highchartsContainer) {
-            highchartsContainer.style.width = '100%';
-            highchartsContainer.style.height = '100%';
-         }
-      }
-
+      
       // Xóa quảng cáo cứng đầu
       document.querySelectorAll('.modal, .modal-backdrop, [class*="popup"], [id^="ads"]').forEach(e => e.remove());
+      
+      // Trigger sự kiện resize để thư viện Highcharts vẽ lại
+      window.dispatchEvent(new Event('resize'));
     }
 
     // Chạy liên tục trong 5 giây đầu để đảm bảo bắt kịp tốc độ load
