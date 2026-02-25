@@ -56,10 +56,8 @@ const DEFAULT_GROUPS: StockGroup[] = [
             "VHM",
             "VIC",
             "VRE",
-            "BCM",
             "NVL",
             "KDH",
-            "KBC",
             "PDR",
             "DIG",
             "NLG",
@@ -70,10 +68,8 @@ const DEFAULT_GROUPS: StockGroup[] = [
             "KHG",
             "CRE",
             "IJC",
-            "SZC",
             "HDG",
             "AGG",
-            "IDC",
         ],
     },
     {
@@ -121,7 +117,6 @@ const DEFAULT_GROUPS: StockGroup[] = [
         name: "Xây dựng và Vật liệu",
         codes: [
             "VCG",
-            "VGC",
             "CII",
             "CTD",
             "HT1",
@@ -130,12 +125,14 @@ const DEFAULT_GROUPS: StockGroup[] = [
             "LCG",
             "G36",
             "C4G",
+            "KSB",
+            "NTP",
         ],
     },
     {
         id: "7",
         name: "Hóa chất",
-        codes: ["GVR", "DGC", "DCM", "DPM", "AAA", "PHR", "DPR"],
+        codes: ["DGC", "DCM", "DPM", "AAA", "DPR"],
     },
     {
         id: "8",
@@ -145,7 +142,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
     {
         id: "9",
         name: "Dầu khí",
-        codes: ["GAS", "PLX", "PVD", "PVT", "BSR", "PVS"],
+        codes: ["GAS", "PLX", "PVD", "PVT", "BSR", "PVS", "OIL", "PVC"],
     },
     {
         id: "10",
@@ -176,6 +173,11 @@ const DEFAULT_GROUPS: StockGroup[] = [
         id: "15",
         name: "Viễn thông",
         codes: ["VGI"],
+    },
+    {
+        id: "16",
+        name: "Bất động sản công nghiệp",
+        codes: ["IDC", "KBC", "GVR", "SIP", "SZC", "VGC", "PHR", "BCM"],
     },
 ];
 
