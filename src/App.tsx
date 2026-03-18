@@ -147,7 +147,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
     {
         id: "10",
         name: "Hàng và Dịch vụ công nghiệp",
-        codes: ["GEX", "REE", "GMD", "HAH", "VOS", "PC1", "ACV"],
+        codes: ["GEX", "REE", "GMD", "HAH", "VOS", "PC1", "ACV", "PET"],
     },
     {
         id: "11",
@@ -157,7 +157,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
     {
         id: "12",
         name: "Tiện ích (Điện, Nước)",
-        codes: ["POW", "NT2", "GEG", "TDM"],
+        codes: ["POW", "NT2", "GEG", "TDM", "GEE", "GEX"],
     },
     {
         id: "13",
