@@ -14,6 +14,7 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null
+let subWin: BrowserWindow | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -37,6 +38,43 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }
+
+// ── IPC: Open Secondary Window ──
+ipcMain.on('open-sub-window', () => {
+  if (subWin) {
+    if (subWin.isMinimized()) subWin.restore()
+    subWin.focus()
+    return
+  }
+
+  subWin = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      webviewTag: true,
+    },
+  })
+
+  // Start maxmimized layout to utilize secondary monitor logic naturally 
+  subWin.maximize()
+
+  if (VITE_DEV_SERVER_URL) {
+    subWin.loadURL(VITE_DEV_SERVER_URL + '#sub')
+  } else {
+    subWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'sub' })
+  }
+
+  subWin.on('closed', () => {
+    subWin = null
+  })
+})
+
+// ── IPC: Sync App State to Sub Window ──
+ipcMain.on('sync-state', (_event, state) => {
+  if (subWin) {
+    subWin.webContents.send('sync-state', state)
+  }
+})
 
 // ── IPC: Select folder to save screenshots ──
 ipcMain.handle('select-save-folder', async () => {

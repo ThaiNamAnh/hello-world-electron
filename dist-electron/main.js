@@ -1,4 +1,4 @@
-import { ipcMain, dialog, app, BrowserWindow } from "electron";
+import { ipcMain, BrowserWindow, dialog, app } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
@@ -9,6 +9,7 @@ const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
+let subWin = null;
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
@@ -27,6 +28,34 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
+ipcMain.on("open-sub-window", () => {
+  if (subWin) {
+    if (subWin.isMinimized()) subWin.restore();
+    subWin.focus();
+    return;
+  }
+  subWin = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    webPreferences: {
+      preload: path.join(__dirname$1, "preload.mjs"),
+      webviewTag: true
+    }
+  });
+  subWin.maximize();
+  if (VITE_DEV_SERVER_URL) {
+    subWin.loadURL(VITE_DEV_SERVER_URL + "#sub");
+  } else {
+    subWin.loadFile(path.join(RENDERER_DIST, "index.html"), { hash: "sub" });
+  }
+  subWin.on("closed", () => {
+    subWin = null;
+  });
+});
+ipcMain.on("sync-state", (_event, state) => {
+  if (subWin) {
+    subWin.webContents.send("sync-state", state);
+  }
+});
 ipcMain.handle("select-save-folder", async () => {
   const result = await dialog.showOpenDialog({
     properties: ["openDirectory"],

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import "./App.css";
 
-const ITEMS_PER_PAGE = 8; // 4 cột x 2 hàng = 8 biểu đồ/trang
-const GRID_COLS = 4; // Giữ nguyên 4 cột
+const isSubWindow = window.location.hash === '#sub';
+
+const ITEMS_PER_PAGE = 6; // 6 mã chứng khoán/trang (3 cột x 2 hàng)
+const GRID_COLS = 3; // 3 cột
 const GROUPS_KEY = "stock-groups"; // Key lưu danh sách nhóm ngành vào localStorage
 const FAVORITES_KEY = "stock-favorites"; // Key lưu danh sách mã yêu thích
 const FILTER_KEY = "stock-filter-mode"; // Key lưu chế độ lọc
@@ -62,7 +64,6 @@ const DEFAULT_GROUPS: StockGroup[] = [
             "DIG",
             "NLG",
             "DXG",
-            "TCH",
             "VPI",
             "HDC",
             "KHG",
@@ -117,7 +118,6 @@ const DEFAULT_GROUPS: StockGroup[] = [
         name: "Xây dựng và Vật liệu",
         codes: [
             "VCG",
-            "CII",
             "CTD",
             "HT1",
             "HHV",
@@ -147,7 +147,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
     {
         id: "10",
         name: "Hàng và Dịch vụ công nghiệp",
-        codes: ["GEX", "REE", "GMD", "HAH", "VOS", "PC1", "ACV", "PET"],
+        codes: ["GMD", "HAH", "VOS", "ACV", "PET"],
     },
     {
         id: "11",
@@ -157,7 +157,7 @@ const DEFAULT_GROUPS: StockGroup[] = [
     {
         id: "12",
         name: "Tiện ích (Điện, Nước)",
-        codes: ["POW", "NT2", "GEG", "TDM", "GEE", "GEX"],
+        codes: ["POW", "NT2", "GEG", "TDM", "GEE", "GEX", "REE"],
     },
     {
         id: "13",
@@ -178,6 +178,16 @@ const DEFAULT_GROUPS: StockGroup[] = [
         id: "16",
         name: "Bất động sản công nghiệp",
         codes: ["IDC", "KBC", "GVR", "SIP", "SZC", "VGC", "PHR", "BCM"],
+    },
+    {
+        id: "17",
+        name: "NOXH",
+        codes: ["HHS", "TCH"],
+    },
+    {
+        id: "18",
+        name: "Hạ tầng điện",
+        codes: ["TV2", "PC1", "PAC", "CII"],
     },
 ];
 
@@ -360,9 +370,36 @@ const CHART_FOCUS_JS = `
   })();
 `;
 
+const FIREANT_FOCUS_CSS = `
+  #root { display: none !important; }
+  .bp5-overlay-backdrop { display: none !important; }
+  .bp5-dialog-container {
+    padding: 0 !important;
+    background-color: #131722 !important;
+  }
+  .bp5-dialog {
+    transform: none !important; /* Xóa transform để position: fixed hđ chuẩn */
+  }
+  
+  /* Thẻ được chỉ định sẽ đè lên toàn màn hình webview */
+  .sc-gZnPbQ.borLEM {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 2147483647 !important;
+    background-color: #131722 !important;
+    margin: 0 !important;
+    padding: 5px !important;
+    box-sizing: border-box !important;
+  }
+`;
+
 // Component for a single webview card - creates webview via DOM API
 function WebviewCard({
     code,
+    mode,
     syncEnabledRef,
     webviewMapRef,
     isSyncingRef,
@@ -373,6 +410,7 @@ function WebviewCard({
     groupName,
 }: {
     code: string;
+    mode: "24h" | "fa";
     syncEnabledRef: React.MutableRefObject<boolean>;
     webviewMapRef: React.MutableRefObject<Map<string, any>>;
     isSyncingRef: React.MutableRefObject<boolean>;
@@ -389,24 +427,31 @@ function WebviewCard({
         const container = containerRef.current;
         if (!container) return;
 
-        // Create webview element programmatically
-        const webview = document.createElement("webview") as any;
-        webview.src = `https://24hmoney.vn/stock/${code}`;
-        webview.style.width = "100%";
-        webview.style.height = "100%";
-        webview.setAttribute("allowpopups", "true");
-        container.appendChild(webview);
+        container.style.display = "flex";
+        container.style.flexDirection = "column";
 
-        webviewMapRef.current.set(code, webview);
+        let webview24h: any = null;
+        let webviewFA: any = null;
 
-        webview.addEventListener("dom-ready", () => {
+        if (mode === "24h") {
+            // Create 24hMoney webview
+            webview24h = document.createElement("webview") as any;
+        webview24h.src = `https://24hmoney.vn/stock/${code}`;
+        webview24h.style.flex = "1";
+        webview24h.style.height = "100%";
+        webview24h.setAttribute("allowpopups", "true");
+        container.appendChild(webview24h);
+
+        webviewMapRef.current.set(code, webview24h);
+
+        webview24h.addEventListener("dom-ready", () => {
             try {
-                webview.insertCSS(CHART_FOCUS_CSS);
+                webview24h.insertCSS(CHART_FOCUS_CSS);
             } catch (e) {
                 console.error(e);
             }
             try {
-                webview.executeJavaScript(CHART_FOCUS_JS);
+                webview24h.executeJavaScript(CHART_FOCUS_JS);
             } catch (e) {
                 console.error(e);
             }
@@ -414,7 +459,7 @@ function WebviewCard({
 
             // Inject sync scripts
             try {
-                webview.executeJavaScript(`
+                webview24h.executeJavaScript(`
           (function() {
             if (window.__syncSetup) return;
             window.__syncSetup = true;
@@ -448,7 +493,7 @@ function WebviewCard({
             }
         });
 
-        webview.addEventListener("console-message", (event: any) => {
+        webview24h.addEventListener("console-message", (event: any) => {
             const msg = event.message;
             if (!msg || !msg.startsWith("__SYNC__")) return;
             if (!syncEnabledRef.current || isSyncingRef.current) return;
@@ -460,7 +505,7 @@ function WebviewCard({
                 if (data.type === "click") {
                     webviewMapRef.current.forEach(
                         (otherWv: any, otherCode: string) => {
-                            if (otherCode !== data.code) {
+                            if (otherCode !== data.code && !otherCode.endsWith('_FA')) {
                                 try {
                                     otherWv.executeJavaScript(`
                   (function() {
@@ -483,7 +528,7 @@ function WebviewCard({
                 if (data.type === "scroll") {
                     webviewMapRef.current.forEach(
                         (otherWv: any, otherCode: string) => {
-                            if (otherCode !== data.code) {
+                            if (otherCode !== data.code && !otherCode.endsWith('_FA')) {
                                 try {
                                     otherWv.executeJavaScript(`
                   (function() {
@@ -509,24 +554,202 @@ function WebviewCard({
                 // ignore
             }
         });
+        } // end of 24h block
+
+        if (mode === "fa") {
+        // Create Fireant webview
+        webviewFA = document.createElement("webview") as any;
+        webviewFA.src = `https://fireant.vn/dashboard/content/symbols/${code}`;
+        webviewFA.style.flex = "1";
+        webviewFA.style.height = "100%";
+        webviewFA.style.borderLeft = "1px solid #2a2e39";
+        webviewFA.setAttribute("allowpopups", "true");
+        container.appendChild(webviewFA);
+
+        webviewFA.addEventListener("dom-ready", () => {
+            setLoading(false);
+            try {
+                webviewFA.insertCSS(FIREANT_FOCUS_CSS);
+            } catch (e) {
+                console.error(e);
+            }
+
+            // Inject sync scripts for Fireant
+            try {
+                webviewFA.executeJavaScript(`
+          (function() {
+            if (window.__syncSetupFA) return;
+            window.__syncSetupFA = true;
+
+            var types = ['click', 'mousedown', 'mouseup'];
+            types.forEach(function(type) {
+                document.addEventListener(type, function(e) {
+                  if (window.__isSyncedActionFA) return;
+                  var relX = e.clientX / window.innerWidth;
+                  var relY = e.clientY / window.innerHeight;
+                  console.log('__SYNC_FA__' + JSON.stringify({
+                    type: type, code: '${code}', relX: relX, relY: relY, buttons: e.buttons
+                  }));
+                }, true);
+            });
+
+            var lastMouseMove = 0;
+            document.addEventListener('mousemove', function(e) {
+              if (window.__isSyncedActionFA) return;
+              var now = Date.now();
+              if (now - lastMouseMove < 15) return; // ~60 FPS
+              lastMouseMove = now;
+              
+              var relX = e.clientX / window.innerWidth;
+              var relY = e.clientY / window.innerHeight;
+              console.log('__SYNC_FA__' + JSON.stringify({
+                type: 'mousemove', code: '${code}', relX: relX, relY: relY, buttons: e.buttons
+              }));
+            }, true);
+
+            document.addEventListener('wheel', function(e) {
+              if (window.__isSyncedActionFA) return;
+              var relX = e.clientX / window.innerWidth;
+              var relY = e.clientY / window.innerHeight;
+              console.log('__SYNC_FA__' + JSON.stringify({
+                type: 'wheel', code: '${code}', relX: relX, relY: relY, 
+                deltaX: e.deltaX, deltaY: e.deltaY, deltaMode: e.deltaMode
+              }));
+            }, {passive: true, capture: true});
+
+            var scrollTimer = null;
+            window.addEventListener('scroll', function() {
+              if (window.__isSyncedActionFA) return;
+              if (scrollTimer) return;
+              scrollTimer = setTimeout(function() {
+                scrollTimer = null;
+                var el = document.scrollingElement || document.documentElement;
+                console.log('__SYNC_FA__' + JSON.stringify({
+                  type: 'scroll', code: '${code}',
+                  scrollTop: el.scrollTop, scrollLeft: el.scrollLeft
+                }));
+              }, 40);
+            }, true);
+          })();
+        `);
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        webviewFA.addEventListener("console-message", (event: any) => {
+            const msg = event.message;
+            if (!msg || !msg.startsWith("__SYNC_FA__")) return;
+            if (!syncEnabledRef.current) return;
+
+            try {
+                const data = JSON.parse(msg.substring(11));
+
+                webviewMapRef.current.forEach(
+                    (otherWv: any, otherCode: string) => {
+                        if (otherCode.endsWith('_FA') && otherCode !== `${data.code}_FA`) {
+                            if (data.type === 'scroll') {
+                                try {
+                                    otherWv.executeJavaScript(`
+                  (function() {
+                    window.__isSyncedActionFA = true;
+                    var el = document.scrollingElement || document.documentElement;
+                    el.scrollTop = ${data.scrollTop};
+                    el.scrollLeft = ${data.scrollLeft};
+                    setTimeout(function() { window.__isSyncedActionFA = false; }, 20);
+                  })();
+                `);
+                                } catch (e) { }
+                            } else if (data.type === 'wheel') {
+                                try {
+                                    otherWv.executeJavaScript(`
+                  (function() {
+                    window.__isSyncedActionFA = true;
+                    var x = ${data.relX} * window.innerWidth;
+                    var y = ${data.relY} * window.innerHeight;
+                    var el = document.elementFromPoint(x, y) || document.body;
+                    
+                    var ev = new WheelEvent('wheel', {
+                        view: window, bubbles: true, cancelable: true,
+                        clientX: x, clientY: y,
+                        deltaX: ${data.deltaX}, deltaY: ${data.deltaY}, deltaMode: ${data.deltaMode}
+                    });
+                    el.dispatchEvent(ev);
+                    window.__isSyncedActionFA = false;
+                  })();
+                `);
+                                } catch (e) { }
+                            } else {
+                                try {
+                                    otherWv.executeJavaScript(`
+                  (function() {
+                    window.__isSyncedActionFA = true;
+                    var x = ${data.relX} * window.innerWidth;
+                    var y = ${data.relY} * window.innerHeight;
+                    var el = document.elementFromPoint(x, y) || document.body;
+                    
+                    if ('${data.type}' === 'click') {
+                        if (typeof el.click === 'function') el.click();
+                        else el.dispatchEvent(new MouseEvent('click', { view: window, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+                        setTimeout(function() { window.__isSyncedActionFA = false; }, 20);
+                    } else {
+                        var evInit = {
+                            view: window, bubbles: true, cancelable: true,
+                            clientX: x, clientY: y, button: 0, buttons: ${data.buttons || 0}
+                        };
+                        var pType = '${data.type}'.replace('mouse', 'pointer');
+                        if (typeof PointerEvent === 'function') {
+                            el.dispatchEvent(new PointerEvent(pType, Object.assign({}, evInit, {pointerId: 1, pointerType: 'mouse'})));
+                        }
+                        el.dispatchEvent(new MouseEvent('${data.type}', evInit));
+                        window.__isSyncedActionFA = false;
+                    }
+                  })();
+                `);
+                                } catch (e) { }
+                            }
+                        }
+                    }
+                );
+            } catch (err) { }
+        });
+
+        webviewMapRef.current.set(`${code}_FA`, webviewFA);
+        } // end form fa block
 
         return () => {
             // Cleanup on unmount
             webviewMapRef.current.delete(code);
-            if (container.contains(webview)) {
-                container.removeChild(webview);
+            webviewMapRef.current.delete(`${code}_FA`);
+            if (webview24h && container.contains(webview24h)) {
+                container.removeChild(webview24h);
+            }
+            if (webviewFA && container.contains(webviewFA)) {
+                container.removeChild(webviewFA);
             }
         };
-    }, [code]);
+    }, [code, mode]);
 
     function handleReload() {
-        const wv = webviewMapRef.current.get(code);
-        if (wv) {
-            setLoading(true);
-            try {
-                wv.reload();
-            } catch (e) {
-                console.error(e);
+        if (mode === "24h") {
+            const wv = webviewMapRef.current.get(code);
+            if (wv) {
+                setLoading(true);
+                try {
+                    wv.reload();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+        if (mode === "fa") {
+            const wvFA = webviewMapRef.current.get(`${code}_FA`);
+            if (wvFA) {
+                try {
+                    wvFA.reload();
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
     }
@@ -536,43 +759,28 @@ function WebviewCard({
             <div className="webview-card-header">
                 <div
                     className="stock-code-label clickable"
-                    onClick={() => onToggleFavorite(code)}
-                    title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                    onClick={() => isSubWindow ? null : onToggleFavorite(code)}
+                    title={isFavorite && !isSubWindow ? "Bỏ yêu thích" : (isSubWindow ? "" : "Thêm vào yêu thích")}
                 >
-                    <span
-                        className={`favorite-star ${isFavorite ? "active" : ""}`}
-                    >
-                        {isFavorite ? "★" : "☆"}
-                    </span>
+                    {!isSubWindow && (
+                        <span className={`favorite-star ${isFavorite ? "active" : ""}`}>
+                            {isFavorite ? "★" : "☆"}
+                        </span>
+                    )}
                     {code}
                     {groupName && (
                         <span className="group-name-label">({groupName})</span>
                     )}
-                    {isDuplicate && (
-                        <span
-                            className="duplicate-warning"
-                            title="Mã này bị trùng lặp ở nhóm khác"
-                        >
-                            ⚠️
-                        </span>
+                    {isDuplicate && !isSubWindow && (
+                        <span className="duplicate-warning" title="Mã này bị trùng lặp ở nhóm khác">⚠️</span>
                     )}
                 </div>
-                <div className="webview-actions">
-                    <button
-                        className="webview-action-btn"
-                        title="Tải lại"
-                        onClick={handleReload}
-                    >
-                        🔄
-                    </button>
-                    <button
-                        className="webview-action-btn btn-delete"
-                        title="Xóa mã này"
-                        onClick={() => onDelete(code)}
-                    >
-                        ✕
-                    </button>
-                </div>
+                {!isSubWindow && (
+                    <div className="webview-actions">
+                        <button className="webview-action-btn" title="Tải lại" onClick={handleReload}>🔄</button>
+                        <button className="webview-action-btn btn-delete" title="Xóa mã này" onClick={() => onDelete(code)}>✕</button>
+                    </div>
+                )}
             </div>
             <div className="webview-container" ref={containerRef}>
                 {loading && (
@@ -724,6 +932,15 @@ function SectorColumn({
 
 // ── Main App ──
 function App() {
+    const [subWindowCodes, setSubWindowCodes] = useState<string[]>([]);
+    useEffect(() => {
+        if (isSubWindow && window.ipcRenderer) {
+            window.ipcRenderer.on('sync-state', (_event: any, state: string[]) => {
+                setSubWindowCodes(state);
+            });
+        }
+    }, []);
+
     const [groups, setGroups] = useState<StockGroup[]>(() => {
         try {
             const saved = localStorage.getItem(GROUPS_KEY);
@@ -807,6 +1024,13 @@ function App() {
         startIndex,
         startIndex + ITEMS_PER_PAGE,
     );
+
+    useEffect(() => {
+        if (!isSubWindow && window.ipcRenderer) {
+            window.ipcRenderer.send('sync-state', currentCodes);
+        }
+    }, [currentCodes]);
+
     const gridRows = Math.ceil(currentCodes.length / GRID_COLS);
 
     const duplicateCodes = useMemo(() => {
@@ -946,6 +1170,7 @@ function App() {
 
     function handleDeleteCode(code: string) {
         webviewMapRef.current.delete(code);
+        webviewMapRef.current.delete(`${code}_FA`);
         setStockCodes((prev) => prev.filter((c) => c !== code));
     }
 
@@ -1025,6 +1250,7 @@ function App() {
         const uniqueCodes = [...stockCodes]; // Use currently filtered codes
         const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE);
         const periods = [
+            { label: "3M", folder: "3 months chart" },
             { label: "6M", folder: "6 months chart" },
             { label: "1Y", folder: "1 year chart" },
             { label: "5Y", folder: "5 years chart" },
@@ -1101,6 +1327,7 @@ function App() {
         const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE);
         const pdfDocs: { [key: string]: jsPDF } = {};
         const periods = [
+            { label: "3M", fileSuffix: "3 tháng" },
             { label: "6M", fileSuffix: "6 tháng" },
             { label: "1Y", fileSuffix: "1 năm" },
             { label: "5Y", fileSuffix: "5 năm" },
@@ -1221,6 +1448,43 @@ function App() {
         }
     }
 
+    if (isSubWindow) {
+        const activeCodes = subWindowCodes;
+        const subGridRows = Math.ceil(activeCodes.length / GRID_COLS);
+        return (
+            <div className="app">
+                <div className="content" style={{ padding: 0 }}>
+                    {activeCodes.length > 0 ? (
+                        <div
+                            className={`webview-grid cols-${GRID_COLS}`}
+                            style={{
+                                gridTemplateRows: `repeat(${subGridRows}, 1fr)`,
+                                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`
+                            }}
+                        >
+                            {activeCodes.map((code) => (
+                                <WebviewCard
+                                    key={code}
+                                    code={code}
+                                    mode="fa"
+                                    syncEnabledRef={syncEnabledRef}
+                                    webviewMapRef={webviewMapRef}
+                                    isSyncingRef={isSyncingRef}
+                                    isFavorite={false}
+                                    onToggleFavorite={() => {}}
+                                    onDelete={() => {}}
+                                    isDuplicate={false}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ color: 'white', padding: 20, textAlign: 'center' }}>Đang chờ mở mã từ Màn hình chính...</div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="app">
             {/* Consolidated Header */}
@@ -1272,7 +1536,7 @@ function App() {
                             </div>
                         )}
                         <div className="time-filter-btns">
-                            {["6M", "1Y", "5Y"].map((period) => (
+                            {["3M", "6M", "1Y", "5Y"].map((period) => (
                                 <button
                                     key={period}
                                     className="btn btn-filter"
@@ -1336,6 +1600,15 @@ function App() {
                             </button>
                         </>
                     )}
+
+                    <button
+                        className="btn btn-primary"
+                        style={{ marginLeft: 'auto', marginRight: 8 }}
+                        onClick={() => window.ipcRenderer?.send('open-sub-window')}
+                        title="Bật màn hình phụ hiển thị mã Fireant"
+                    >
+                        🖥️ Mở màn phụ
+                    </button>
 
                     <button
                         className={`btn btn-sync-icon ${syncEnabled ? "active" : ""}`}
@@ -1430,12 +1703,16 @@ function App() {
                 ) : (
                     <div
                         className={`webview-grid cols-${GRID_COLS}`}
-                        style={{ gridTemplateRows: `repeat(${gridRows}, 1fr)` }}
+                        style={{
+                            gridTemplateRows: `repeat(${gridRows}, 1fr)`,
+                            gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`
+                        }}
                     >
                         {currentCodes.map((code) => (
                             <WebviewCard
                                 key={`${currentPage}-${code}`}
                                 code={code}
+                                mode="24h"
                                 groupName={codeToGroupNames
                                     .get(code)
                                     ?.join(", ")}
