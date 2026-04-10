@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import "./App.css";
 
-const isSubWindow = window.location.hash === '#sub';
+const isSubWindow = window.location.hash === "#sub";
 
 const ITEMS_PER_PAGE = 6; // 6 mã chứng khoán/trang (3 cột x 2 hàng)
 const GRID_COLS = 3; // 3 cột
@@ -32,162 +32,191 @@ const DEFAULT_GROUPS: StockGroup[] = [
         id: "1",
         name: "Ngân hàng",
         codes: [
-            "VCB",
-            "BID",
-            "CTG",
-            "TCB",
-            "VPB",
-            "MBB",
-            "ACB",
-            "SSB",
-            "STB",
-            "HDB",
-            "VIB",
-            "TPB",
             "SHB",
-            "OCB",
+            "MBB",
+            "VPB",
+            "HDB",
             "MSB",
+            "ACB",
+            "TCB",
+            "TPB",
             "EIB",
+            "BID",
+            "VCB",
+            "CTG",
+            "VIB",
+            "STB",
+            "OCB",
+            "NAB",
+            "BVB",
+            "SSB",
             "LPB",
         ],
     },
     {
         id: "2",
-        name: "Bất động sản",
+        name: "Dịch vụ Tài chính & Chứng khoán",
         codes: [
-            "VHM",
-            "VIC",
-            "VRE",
-            "NVL",
-            "KDH",
-            "PDR",
-            "DIG",
-            "NLG",
-            "DXG",
-            "VPI",
-            "HDC",
-            "KHG",
-            "CRE",
-            "IJC",
-            "HDG",
-            "AGG",
+            "VIX",
+            "SSI",
+            "SHS",
+            "HCM",
+            "VND",
+            "VCI",
+            "VCK",
+            "EVF",
+            "MBS",
+            "ORS",
+            "TCX",
+            "AAS",
+            "VFS",
+            "VPX",
+            "FTS",
+            "CTS",
+            "VDS",
+            "SBS",
+            "BSI",
+            "AGR",
+            "APG",
         ],
     },
     {
         id: "3",
-        name: "Dịch vụ tài chính (Chứng khoán)",
+        name: "Bất động sản Dân cư / Thương mại",
         codes: [
-            "SSI",
-            "VND",
-            "VCI",
-            "HCM",
-            "VIX",
-            "FTS",
-            "BSI",
-            "CTS",
-            "AGR",
-            "ORS",
-            "TVS",
+            "NVL",
+            "DXG",
+            "CEO",
+            "DIG",
+            "PDR",
+            "TCH",
+            "KHG",
+            "VRE",
+            "VHM",
+            "KDH",
+            "NLG",
+            "VIC",
+            "HQC",
+            "HDC",
+            "DXS",
+            "HDG",
+            "TIG",
+            "SCR",
+            "VC3",
+            "NRC",
+            "LDG",
         ],
     },
     {
         id: "4",
-        name: "Tài nguyên cơ bản (Thép)",
-        codes: ["HPG", "HSG", "NKG"],
+        name: "Bất động sản Khu công nghiệp",
+        codes: ["KBC", "IDC", "BCM", "SZC", "IJC"],
     },
     {
         id: "5",
-        name: "Thực phẩm và Đồ uống",
+        name: "Xây dựng, Lắp máy & Hạ tầng",
         codes: [
-            "VNM",
-            "MSN",
-            "SAB",
-            "KDC",
-            "SBT",
-            "PAN",
-            "DBC",
-            "HAG",
-            "BAF",
-            "ANV",
-            "IDI",
-            "ASM",
+            "CII",
+            "VCG",
+            "HHV",
+            "PC1",
+            "MST",
+            "HBC",
+            "LCG",
+            "CRC",
+            "DLG",
+            "FCN",
+            "CDC",
+            "SVN",
+            "EVG",
+            "CTI",
+            "CTD",
+            "HID",
+            "DPG",
+            "C4G",
+            "DC4",
+            "GEL",
         ],
     },
     {
         id: "6",
-        name: "Xây dựng và Vật liệu",
-        codes: [
-            "VCG",
-            "CTD",
-            "HT1",
-            "HHV",
-            "BMP",
-            "LCG",
-            "G36",
-            "C4G",
-            "KSB",
-            "NTP",
-        ],
+        name: "Vật liệu xây dựng",
+        codes: ["KSB", "VGC"],
     },
     {
         id: "7",
-        name: "Hóa chất",
-        codes: ["DGC", "DCM", "DPM", "AAA", "DPR"],
+        name: "Thực phẩm và Đồ uống",
+        codes: ["MSN", "VNM", "HNG", "HAG", "DBC", "BAF", "ANV", "VHC", "SAB"],
     },
     {
         id: "8",
-        name: "Bán lẻ",
-        codes: ["MWG", "PNJ", "FRT", "DGW"],
+        name: "Tài nguyên Cơ bản",
+        codes: ["HPG", "NKG", "HSG", "MSR", "MZG", "VPG"],
     },
     {
         id: "9",
-        name: "Dầu khí",
-        codes: ["GAS", "PLX", "PVD", "PVT", "BSR", "PVS", "OIL", "PVC"],
+        name: "Hóa chất",
+        codes: ["DCM", "DPM", "GVR", "DGC", "DDV", "AAA", "VTZ"],
     },
     {
         id: "10",
-        name: "Hàng và Dịch vụ công nghiệp",
-        codes: ["GMD", "HAH", "VOS", "ACV", "PET"],
+        name: "Dầu khí",
+        codes: ["GAS", "BSR", "PVS", "PVD", "PLX", "OIL", "PVC"],
     },
     {
         id: "11",
-        name: "Công nghệ thông tin",
-        codes: ["FPT", "CMG", "ELC"],
+        name: "Vận tải & Logistics",
+        codes: ["GMD", "HAH", "VOS", "PVT", "VSC", "DXP", "HHG", "ACV"],
     },
     {
         id: "12",
-        name: "Tiện ích (Điện, Nước)",
-        codes: ["POW", "NT2", "GEG", "TDM", "GEE", "GEX", "REE"],
+        name: "Bán lẻ",
+        codes: ["MWG", "DGW", "PET", "PNJ"],
     },
     {
         id: "13",
-        name: "Bảo hiểm",
-        codes: ["BVH", "BMI"],
+        name: "Hàng cá nhân & Gia dụng (Dệt may)",
+        codes: ["TNG", "TCM", "VGT"],
     },
     {
         id: "14",
-        name: "Du lịch và Giải trí",
-        codes: ["VJC", "HVN", "VPL"],
+        name: "Tiện ích",
+        codes: ["POW", "GEG", "REE"],
     },
     {
         id: "15",
+        name: "Hàng & Dịch vụ Công nghiệp",
+        codes: ["GEX", "GEE"],
+    },
+    {
+        id: "16",
+        name: "Hàng không",
+        codes: ["HVN", "VJC"],
+    },
+    {
+        id: "17",
+        name: "Ô tô và Phụ tùng",
+        codes: ["HHS", "HUT"],
+    },
+    {
+        id: "18",
+        name: "Công nghệ Thông tin",
+        codes: ["FPT"],
+    },
+    {
+        id: "19",
         name: "Viễn thông",
         codes: ["VGI"],
     },
     {
-        id: "16",
-        name: "Bất động sản công nghiệp",
-        codes: ["IDC", "KBC", "GVR", "SIP", "SZC", "VGC", "PHR", "BCM"],
+        id: "20",
+        name: "Truyền thông",
+        codes: ["YEG"],
     },
     {
-        id: "17",
-        name: "NOXH",
-        codes: ["HHS", "TCH"],
-    },
-    {
-        id: "18",
-        name: "Hạ tầng điện",
-        codes: ["TV2", "PC1", "PAC", "CII"],
+        id: "21",
+        name: "Y tế",
+        codes: ["DCL"],
     },
 ];
 
@@ -370,29 +399,71 @@ const CHART_FOCUS_JS = `
   })();
 `;
 
+// const FIREANT_FOCUS_CSS = `
+//   #root { display: none !important; }
+//   .bp5-overlay-backdrop { display: none !important; }
+//   .bp5-dialog-container {
+//     padding: 0 !important;
+//     background-color: #131722 !important;
+//   }
+//   .bp5-dialog {
+//     transform: none !important; /* Xóa transform để position: fixed hđ chuẩn */
+//   }
+
+//   /* Thẻ được chỉ định sẽ đè lên toàn màn hình webview */
+//   /*.sc-gZnPbQ.borLEM {*/
+//   div.rounded-lg.bg-card.text-card-foreground {
+//     position: fixed !important;
+//     top: 0 !important;
+//     left: 0 !important;
+//     width: 100vw !important;
+//     height: 100vh !important;
+//     z-index: 2147483647 !important;
+//     background-color: #131722 !important;
+//     margin: 0 !important;
+//     padding: 5px !important;
+//     box-sizing: border-box !important;
+//   }
+// `;
+
 const FIREANT_FOCUS_CSS = `
-  #root { display: none !important; }
+  /* Ẩn scrollbar của body */
+  body { 
+    overflow: hidden !important; 
+  }
+
+  /* Cấu hình cho Dialog cũ */
   .bp5-overlay-backdrop { display: none !important; }
   .bp5-dialog-container {
     padding: 0 !important;
     background-color: #131722 !important;
   }
   .bp5-dialog {
-    transform: none !important; /* Xóa transform để position: fixed hđ chuẩn */
+    transform: none !important; 
   }
   
-  /* Thẻ được chỉ định sẽ đè lên toàn màn hình webview */
-  .sc-gZnPbQ.borLEM {
+  /* 1. THẺ BIỂU ĐỒ CHÍNH */
+  div.bg-card[class*="flex-[2]"] > div:first-child > div:first-child {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 2147483647 !important;
+    
+    /* Giảm z-index xuống một chút để chừa chỗ cho popup */
+    z-index: 9999 !important; 
+    
     background-color: #131722 !important;
     margin: 0 !important;
-    padding: 5px !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  /* 2. FIX LỖI MENU DROP-DOWN (Nút fx, cài đặt...) */
+  /* Bắt các thẻ sinh ra bởi Radix UI Popper (dựa trên data attribute) */
+  [data-radix-popper-content-wrapper] {
+    /* Ép z-index cao hơn biểu đồ để nó nổi lên trên */
+    z-index: 10000 !important; 
   }
 `;
 
@@ -436,30 +507,30 @@ function WebviewCard({
         if (mode === "24h") {
             // Create 24hMoney webview
             webview24h = document.createElement("webview") as any;
-        webview24h.src = `https://24hmoney.vn/stock/${code}`;
-        webview24h.style.flex = "1";
-        webview24h.style.height = "100%";
-        webview24h.setAttribute("allowpopups", "true");
-        container.appendChild(webview24h);
+            webview24h.src = `https://24hmoney.vn/stock/${code}`;
+            webview24h.style.flex = "1";
+            webview24h.style.height = "100%";
+            webview24h.setAttribute("allowpopups", "true");
+            container.appendChild(webview24h);
 
-        webviewMapRef.current.set(code, webview24h);
+            webviewMapRef.current.set(code, webview24h);
 
-        webview24h.addEventListener("dom-ready", () => {
-            try {
-                webview24h.insertCSS(CHART_FOCUS_CSS);
-            } catch (e) {
-                console.error(e);
-            }
-            try {
-                webview24h.executeJavaScript(CHART_FOCUS_JS);
-            } catch (e) {
-                console.error(e);
-            }
-            setLoading(false);
+            webview24h.addEventListener("dom-ready", () => {
+                try {
+                    webview24h.insertCSS(CHART_FOCUS_CSS);
+                } catch (e) {
+                    console.error(e);
+                }
+                try {
+                    webview24h.executeJavaScript(CHART_FOCUS_JS);
+                } catch (e) {
+                    console.error(e);
+                }
+                setLoading(false);
 
-            // Inject sync scripts
-            try {
-                webview24h.executeJavaScript(`
+                // Inject sync scripts
+                try {
+                    webview24h.executeJavaScript(`
           (function() {
             if (window.__syncSetup) return;
             window.__syncSetup = true;
@@ -488,26 +559,29 @@ function WebviewCard({
             }, true);
           })();
         `);
-            } catch (e) {
-                console.error(e);
-            }
-        });
+                } catch (e) {
+                    console.error(e);
+                }
+            });
 
-        webview24h.addEventListener("console-message", (event: any) => {
-            const msg = event.message;
-            if (!msg || !msg.startsWith("__SYNC__")) return;
-            if (!syncEnabledRef.current || isSyncingRef.current) return;
+            webview24h.addEventListener("console-message", (event: any) => {
+                const msg = event.message;
+                if (!msg || !msg.startsWith("__SYNC__")) return;
+                if (!syncEnabledRef.current || isSyncingRef.current) return;
 
-            try {
-                const data = JSON.parse(msg.substring(8));
-                isSyncingRef.current = true;
+                try {
+                    const data = JSON.parse(msg.substring(8));
+                    isSyncingRef.current = true;
 
-                if (data.type === "click") {
-                    webviewMapRef.current.forEach(
-                        (otherWv: any, otherCode: string) => {
-                            if (otherCode !== data.code && !otherCode.endsWith('_FA')) {
-                                try {
-                                    otherWv.executeJavaScript(`
+                    if (data.type === "click") {
+                        webviewMapRef.current.forEach(
+                            (otherWv: any, otherCode: string) => {
+                                if (
+                                    otherCode !== data.code &&
+                                    !otherCode.endsWith("_FA")
+                                ) {
+                                    try {
+                                        otherWv.executeJavaScript(`
                   (function() {
                     window.__isSyncedAction = true;
                     var x = ${data.relX} * window.innerWidth;
@@ -517,20 +591,23 @@ function WebviewCard({
                     setTimeout(function() { window.__isSyncedAction = false; }, 200);
                   })();
                 `);
-                                } catch (e) {
-                                    console.error(e);
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
                                 }
-                            }
-                        },
-                    );
-                }
+                            },
+                        );
+                    }
 
-                if (data.type === "scroll") {
-                    webviewMapRef.current.forEach(
-                        (otherWv: any, otherCode: string) => {
-                            if (otherCode !== data.code && !otherCode.endsWith('_FA')) {
-                                try {
-                                    otherWv.executeJavaScript(`
+                    if (data.type === "scroll") {
+                        webviewMapRef.current.forEach(
+                            (otherWv: any, otherCode: string) => {
+                                if (
+                                    otherCode !== data.code &&
+                                    !otherCode.endsWith("_FA")
+                                ) {
+                                    try {
+                                        otherWv.executeJavaScript(`
                   (function() {
                     window.__isSyncedAction = true;
                     var el = document.scrollingElement || document.documentElement;
@@ -539,49 +616,49 @@ function WebviewCard({
                     setTimeout(function() { window.__isSyncedAction = false; }, 100);
                   })();
                 `);
-                                } catch (e) {
-                                    console.error(e);
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
                                 }
-                            }
-                        },
-                    );
-                }
+                            },
+                        );
+                    }
 
-                setTimeout(() => {
-                    isSyncingRef.current = false;
-                }, 300);
-            } catch (err) {
-                // ignore
-            }
-        });
+                    setTimeout(() => {
+                        isSyncingRef.current = false;
+                    }, 300);
+                } catch (err) {
+                    // ignore
+                }
+            });
         } // end of 24h block
 
         if (mode === "fa") {
-        // Create Fireant webview
-        webviewFA = document.createElement("webview") as any;
-        webviewFA.src = `https://fireant.vn/dashboard/content/symbols/${code}`;
-        webviewFA.style.flex = "1";
-        webviewFA.style.height = "100%";
-        webviewFA.style.borderLeft = "1px solid #2a2e39";
-        webviewFA.setAttribute("allowpopups", "true");
-        container.appendChild(webviewFA);
+            // Create Fireant webview
+            webviewFA = document.createElement("webview") as any;
+            webviewFA.src = `https://fireant.vn/ma-chung-khoan/${code}`;
+            webviewFA.style.flex = "1";
+            webviewFA.style.height = "100%";
+            webviewFA.style.borderLeft = "1px solid #2a2e39";
+            webviewFA.setAttribute("allowpopups", "true");
+            container.appendChild(webviewFA);
 
-        webviewFA.addEventListener("dom-ready", () => {
-            setLoading(false);
-            try {
-                webviewFA.insertCSS(FIREANT_FOCUS_CSS);
-            } catch (e) {
-                console.error(e);
-            }
+            webviewFA.addEventListener("dom-ready", () => {
+                setLoading(false);
+                try {
+                    webviewFA.insertCSS(FIREANT_FOCUS_CSS);
+                } catch (e) {
+                    console.error(e);
+                }
 
-            // Inject sync scripts for Fireant
-            try {
-                webviewFA.executeJavaScript(`
+                // Inject sync scripts for Fireant
+                try {
+                    webviewFA.executeJavaScript(`
           (function() {
             if (window.__syncSetupFA) return;
             window.__syncSetupFA = true;
 
-            var types = ['click', 'mousedown', 'mouseup'];
+            var types = ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'];
             types.forEach(function(type) {
                 document.addEventListener(type, function(e) {
                   if (window.__isSyncedActionFA) return;
@@ -632,25 +709,28 @@ function WebviewCard({
             }, true);
           })();
         `);
-            } catch (e) {
-                console.error(e);
-            }
-        });
+                } catch (e) {
+                    console.error(e);
+                }
+            });
 
-        webviewFA.addEventListener("console-message", (event: any) => {
-            const msg = event.message;
-            if (!msg || !msg.startsWith("__SYNC_FA__")) return;
-            if (!syncEnabledRef.current) return;
+            webviewFA.addEventListener("console-message", (event: any) => {
+                const msg = event.message;
+                if (!msg || !msg.startsWith("__SYNC_FA__")) return;
+                if (!syncEnabledRef.current) return;
 
-            try {
-                const data = JSON.parse(msg.substring(11));
+                try {
+                    const data = JSON.parse(msg.substring(11));
 
-                webviewMapRef.current.forEach(
-                    (otherWv: any, otherCode: string) => {
-                        if (otherCode.endsWith('_FA') && otherCode !== `${data.code}_FA`) {
-                            if (data.type === 'scroll') {
-                                try {
-                                    otherWv.executeJavaScript(`
+                    webviewMapRef.current.forEach(
+                        (otherWv: any, otherCode: string) => {
+                            if (
+                                otherCode.endsWith("_FA") &&
+                                otherCode !== `${data.code}_FA`
+                            ) {
+                                if (data.type === "scroll") {
+                                    try {
+                                        otherWv.executeJavaScript(`
                   (function() {
                     window.__isSyncedActionFA = true;
                     var el = document.scrollingElement || document.documentElement;
@@ -659,10 +739,10 @@ function WebviewCard({
                     setTimeout(function() { window.__isSyncedActionFA = false; }, 20);
                   })();
                 `);
-                                } catch (e) { }
-                            } else if (data.type === 'wheel') {
-                                try {
-                                    otherWv.executeJavaScript(`
+                                    } catch (e) {}
+                                } else if (data.type === "wheel") {
+                                    try {
+                                        otherWv.executeJavaScript(`
                   (function() {
                     window.__isSyncedActionFA = true;
                     var x = ${data.relX} * window.innerWidth;
@@ -678,43 +758,47 @@ function WebviewCard({
                     window.__isSyncedActionFA = false;
                   })();
                 `);
-                                } catch (e) { }
-                            } else {
-                                try {
-                                    otherWv.executeJavaScript(`
+                                    } catch (e) {}
+                                } else {
+                                    try {
+                                        otherWv.executeJavaScript(`
                   (function() {
                     window.__isSyncedActionFA = true;
                     var x = ${data.relX} * window.innerWidth;
                     var y = ${data.relY} * window.innerHeight;
                     var el = document.elementFromPoint(x, y) || document.body;
                     
+                    // THỦ THUẬT QUAN TRỌNG: Nếu element là hình ảnh/svg bên trong button, tự động dịch chuyển target lên button
+                    var targetEl = el.closest('button, [role="button"], [role="menuitem"], [role="tab"]') || el;
+                    
                     if ('${data.type}' === 'click') {
-                        if (typeof el.click === 'function') el.click();
-                        else el.dispatchEvent(new MouseEvent('click', { view: window, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+                        if (typeof targetEl.click === 'function') targetEl.click();
+                        else targetEl.dispatchEvent(new MouseEvent('click', { view: window, bubbles: true, cancelable: true, clientX: x, clientY: y }));
                         setTimeout(function() { window.__isSyncedActionFA = false; }, 20);
-                    } else {
-                        var evInit = {
-                            view: window, bubbles: true, cancelable: true,
-                            clientX: x, clientY: y, button: 0, buttons: ${data.buttons || 0}
-                        };
-                        var pType = '${data.type}'.replace('mouse', 'pointer');
+                    } else if ('${data.type}'.includes('pointer')) {
+                        // Dispatch chuẩn cho sự kiện Pointer (pointerdown, pointerup)
                         if (typeof PointerEvent === 'function') {
-                            el.dispatchEvent(new PointerEvent(pType, Object.assign({}, evInit, {pointerId: 1, pointerType: 'mouse'})));
+                            var evInit = { view: window, bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: ${data.buttons || 0}, pointerId: 1, pointerType: 'mouse' };
+                            targetEl.dispatchEvent(new PointerEvent('${data.type}', evInit));
                         }
-                        el.dispatchEvent(new MouseEvent('${data.type}', evInit));
+                        window.__isSyncedActionFA = false;
+                    } else {
+                        // Dispatch cho mousedown, mouseup thông thường
+                        var evInit = { view: window, bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: ${data.buttons || 0} };
+                        targetEl.dispatchEvent(new MouseEvent('${data.type}', evInit));
                         window.__isSyncedActionFA = false;
                     }
                   })();
                 `);
-                                } catch (e) { }
+                                    } catch (e) {}
+                                }
                             }
-                        }
-                    }
-                );
-            } catch (err) { }
-        });
+                        },
+                    );
+                } catch (err) {}
+            });
 
-        webviewMapRef.current.set(`${code}_FA`, webviewFA);
+            webviewMapRef.current.set(`${code}_FA`, webviewFA);
         } // end form fa block
 
         return () => {
@@ -759,11 +843,21 @@ function WebviewCard({
             <div className="webview-card-header">
                 <div
                     className="stock-code-label clickable"
-                    onClick={() => isSubWindow ? null : onToggleFavorite(code)}
-                    title={isFavorite && !isSubWindow ? "Bỏ yêu thích" : (isSubWindow ? "" : "Thêm vào yêu thích")}
+                    onClick={() =>
+                        isSubWindow ? null : onToggleFavorite(code)
+                    }
+                    title={
+                        isFavorite && !isSubWindow
+                            ? "Bỏ yêu thích"
+                            : isSubWindow
+                              ? ""
+                              : "Thêm vào yêu thích"
+                    }
                 >
                     {!isSubWindow && (
-                        <span className={`favorite-star ${isFavorite ? "active" : ""}`}>
+                        <span
+                            className={`favorite-star ${isFavorite ? "active" : ""}`}
+                        >
                             {isFavorite ? "★" : "☆"}
                         </span>
                     )}
@@ -772,13 +866,30 @@ function WebviewCard({
                         <span className="group-name-label">({groupName})</span>
                     )}
                     {isDuplicate && !isSubWindow && (
-                        <span className="duplicate-warning" title="Mã này bị trùng lặp ở nhóm khác">⚠️</span>
+                        <span
+                            className="duplicate-warning"
+                            title="Mã này bị trùng lặp ở nhóm khác"
+                        >
+                            ⚠️
+                        </span>
                     )}
                 </div>
                 {!isSubWindow && (
                     <div className="webview-actions">
-                        <button className="webview-action-btn" title="Tải lại" onClick={handleReload}>🔄</button>
-                        <button className="webview-action-btn btn-delete" title="Xóa mã này" onClick={() => onDelete(code)}>✕</button>
+                        <button
+                            className="webview-action-btn"
+                            title="Tải lại"
+                            onClick={handleReload}
+                        >
+                            🔄
+                        </button>
+                        <button
+                            className="webview-action-btn btn-delete"
+                            title="Xóa mã này"
+                            onClick={() => onDelete(code)}
+                        >
+                            ✕
+                        </button>
                     </div>
                 )}
             </div>
@@ -935,9 +1046,12 @@ function App() {
     const [subWindowCodes, setSubWindowCodes] = useState<string[]>([]);
     useEffect(() => {
         if (isSubWindow && window.ipcRenderer) {
-            window.ipcRenderer.on('sync-state', (_event: any, state: string[]) => {
-                setSubWindowCodes(state);
-            });
+            window.ipcRenderer.on(
+                "sync-state",
+                (_event: any, state: string[]) => {
+                    setSubWindowCodes(state);
+                },
+            );
         }
     }, []);
 
@@ -1027,7 +1141,7 @@ function App() {
 
     useEffect(() => {
         if (!isSubWindow && window.ipcRenderer) {
-            window.ipcRenderer.send('sync-state', currentCodes);
+            window.ipcRenderer.send("sync-state", currentCodes);
         }
     }, [currentCodes]);
 
@@ -1459,7 +1573,7 @@ function App() {
                             className={`webview-grid cols-${GRID_COLS}`}
                             style={{
                                 gridTemplateRows: `repeat(${subGridRows}, 1fr)`,
-                                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`
+                                gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
                             }}
                         >
                             {activeCodes.map((code) => (
@@ -1478,7 +1592,15 @@ function App() {
                             ))}
                         </div>
                     ) : (
-                        <div style={{ color: 'white', padding: 20, textAlign: 'center' }}>Đang chờ mở mã từ Màn hình chính...</div>
+                        <div
+                            style={{
+                                color: "white",
+                                padding: 20,
+                                textAlign: "center",
+                            }}
+                        >
+                            Đang chờ mở mã từ Màn hình chính...
+                        </div>
                     )}
                 </div>
             </div>
@@ -1603,8 +1725,10 @@ function App() {
 
                     <button
                         className="btn btn-primary"
-                        style={{ marginLeft: 'auto', marginRight: 8 }}
-                        onClick={() => window.ipcRenderer?.send('open-sub-window')}
+                        style={{ marginLeft: "auto", marginRight: 8 }}
+                        onClick={() =>
+                            window.ipcRenderer?.send("open-sub-window")
+                        }
                         title="Bật màn hình phụ hiển thị mã Fireant"
                     >
                         🖥️ Mở màn phụ
@@ -1705,7 +1829,7 @@ function App() {
                         className={`webview-grid cols-${GRID_COLS}`}
                         style={{
                             gridTemplateRows: `repeat(${gridRows}, 1fr)`,
-                            gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`
+                            gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
                         }}
                     >
                         {currentCodes.map((code) => (
