@@ -29,194 +29,270 @@ interface StockGroup {
 
 const DEFAULT_GROUPS: StockGroup[] = [
     {
-        id: "1",
-        name: "Ngân hàng",
-        codes: [
-            "SHB",
-            "MBB",
-            "VPB",
-            "HDB",
-            "MSB",
-            "ACB",
-            "TCB",
-            "TPB",
-            "EIB",
-            "BID",
-            "VCB",
-            "CTG",
-            "VIB",
-            "STB",
-            "OCB",
-            "NAB",
-            "BVB",
-            "SSB",
-            "LPB",
-        ],
-    },
-    {
-        id: "2",
-        name: "Dịch vụ Tài chính & Chứng khoán",
-        codes: [
-            "VIX",
-            "SSI",
-            "SHS",
-            "HCM",
-            "VND",
-            "VCI",
-            "VCK",
-            "EVF",
-            "MBS",
-            "ORS",
-            "TCX",
-            "AAS",
-            "VFS",
-            "VPX",
-            "FTS",
-            "CTS",
-            "VDS",
-            "SBS",
-            "BSI",
-            "AGR",
-            "APG",
-        ],
-    },
-    {
-        id: "3",
-        name: "Bất động sản Dân cư / Thương mại",
-        codes: [
-            "NVL",
-            "DXG",
-            "CEO",
-            "DIG",
-            "PDR",
-            "TCH",
-            "KHG",
-            "VRE",
-            "VHM",
-            "KDH",
-            "NLG",
-            "VIC",
-            "HQC",
-            "HDC",
-            "DXS",
-            "HDG",
-            "TIG",
-            "SCR",
-            "VC3",
-            "NRC",
-            "LDG",
-        ],
-    },
-    {
-        id: "4",
-        name: "Bất động sản Khu công nghiệp",
-        codes: ["KBC", "IDC", "BCM", "SZC", "IJC"],
-    },
-    {
         id: "5",
-        name: "Xây dựng, Lắp máy & Hạ tầng",
-        codes: [
-            "CII",
-            "VCG",
-            "HHV",
-            "PC1",
-            "MST",
-            "HBC",
-            "LCG",
-            "CRC",
-            "DLG",
-            "FCN",
-            "CDC",
-            "SVN",
-            "EVG",
-            "CTI",
-            "CTD",
-            "HID",
-            "DPG",
-            "C4G",
-            "DC4",
-            "GEL",
-        ],
-    },
-    {
-        id: "6",
-        name: "Vật liệu xây dựng",
-        codes: ["KSB", "VGC"],
-    },
-    {
-        id: "7",
-        name: "Thực phẩm và Đồ uống",
-        codes: ["MSN", "VNM", "HNG", "HAG", "DBC", "BAF", "ANV", "VHC", "SAB"],
-    },
-    {
-        id: "8",
-        name: "Tài nguyên Cơ bản",
-        codes: ["HPG", "NKG", "HSG", "MSR", "MZG", "VPG"],
-    },
-    {
-        id: "9",
-        name: "Hóa chất",
-        codes: ["DCM", "DPM", "GVR", "DGC", "DDV", "AAA", "VTZ"],
-    },
-    {
-        id: "10",
         name: "Dầu khí",
-        codes: ["GAS", "BSR", "PVS", "PVD", "PLX", "OIL", "PVC"],
-    },
-    {
-        id: "11",
-        name: "Vận tải & Logistics",
-        codes: ["GMD", "HAH", "VOS", "PVT", "VSC", "DXP", "HHG", "ACV"],
-    },
-    {
-        id: "12",
-        name: "Bán lẻ",
-        codes: ["MWG", "DGW", "PET", "PNJ"],
+        codes: ["BSR", "OIL", "PLX", "PVD", "PVS"],
     },
     {
         id: "13",
-        name: "Hàng cá nhân & Gia dụng (Dệt may)",
-        codes: ["TNG", "TCM", "VGT"],
-    },
-    {
-        id: "14",
-        name: "Tiện ích",
-        codes: ["POW", "GEG", "REE"],
-    },
-    {
-        id: "15",
-        name: "Hàng & Dịch vụ Công nghiệp",
-        codes: ["GEX", "GEE"],
-    },
-    {
-        id: "16",
-        name: "Hàng không",
-        codes: ["HVN", "VJC"],
+        name: "Hóa chất",
+        codes: [
+            "AAA",
+            "BFC",
+            "CSV",
+            "DCM",
+            "DDV",
+            "DGC",
+            "DPM",
+            "DPR",
+            "DRI",
+            "GVR",
+            "HII",
+            "LAS",
+            "PHR",
+            "PLP",
+            "VTZ",
+        ],
     },
     {
         id: "17",
-        name: "Ô tô và Phụ tùng",
-        codes: ["HHS", "HUT"],
+        name: "Tài nguyên cơ bản",
+        codes: [
+            "AAH",
+            "DHC",
+            "HHP",
+            "HPG",
+            "HSG",
+            "MSR",
+            "MZG",
+            "NKG",
+            "SMC",
+            "TLH",
+            "TTF",
+            "TVN",
+            "VGS",
+        ],
     },
     {
-        id: "18",
-        name: "Công nghệ Thông tin",
-        codes: ["FPT"],
+        id: "23",
+        name: "Vật liệu xây dựng",
+        codes: [
+            "CDC",
+            "CII",
+            "CRC",
+            "CTD",
+            "CTR",
+            "DC4",
+            "DLG",
+            "DPG",
+            "EVG",
+            "FCN",
+            "G36",
+            "GEL",
+            "HBC",
+            "HHV",
+            "HID",
+            "HT1",
+            "HVH",
+            "KSB",
+            "LCG",
+            "MST",
+            "PC1",
+            "TLD",
+            "VCG",
+            "VGC",
+            "VNE",
+        ],
     },
     {
-        id: "19",
-        name: "Viễn thông",
-        codes: ["VGI"],
+        id: "27",
+        name: "Hàng và dịch vụ công nghiệp",
+        codes: [
+            "ACV",
+            "GEE",
+            "GEX",
+            "GMD",
+            "HAH",
+            "PAC",
+            "PVP",
+            "PVT",
+            "TV2",
+            "VOS",
+            "VSC",
+            "VTO",
+            "VTP",
+        ],
     },
     {
-        id: "20",
+        id: "33",
+        name: "Ô tô và phụ tùng",
+        codes: ["CSM", "HAX", "HHS", "HUT"],
+    },
+    {
+        id: "35",
+        name: "Thực phẩm và đồ uống",
+        codes: [
+            "ANV",
+            "ASM",
+            "BAF",
+            "BIG",
+            "DBC",
+            "HAG",
+            "HNG",
+            "HSL",
+            "IDI",
+            "MSN",
+            "NAF",
+            "PAN",
+            "SAB",
+            "SBT",
+            "TCO",
+            "VHC",
+            "VNM",
+        ],
+    },
+    {
+        id: "37",
+        name: "Hàng cá nhân và gia dụng",
+        codes: ["MSH", "PNJ", "TCM", "TNG", "VGT"],
+    },
+    {
+        id: "45",
+        name: "Y tế",
+        codes: ["DCL", "FIT", "JVC"],
+    },
+    {
+        id: "53",
+        name: "Bán lẻ",
+        codes: ["DGW", "MWG", "PET"],
+    },
+    {
+        id: "55",
         name: "Truyền thông",
         codes: ["YEG"],
     },
     {
-        id: "21",
-        name: "Y tế",
-        codes: ["DCL"],
+        id: "57",
+        name: "Du lịch và giải trí",
+        codes: ["HVN", "SCS", "VJC", "VPL"],
+    },
+    {
+        id: "65",
+        name: "Viễn thông",
+        codes: ["VGI"],
+    },
+    {
+        id: "75",
+        name: "Điện, nước, xăng dầu, khí đốt",
+        codes: ["ASP", "BWE", "GAS", "GEG", "NT2", "POW", "PPC", "REE", "TTA"],
+    },
+    {
+        id: "83",
+        name: "Ngân hàng",
+        codes: [
+            "ABB",
+            "ACB",
+            "BID",
+            "BVB",
+            "CTG",
+            "EIB",
+            "HDB",
+            "KLB",
+            "LPB",
+            "MBB",
+            "MSB",
+            "NAB",
+            "OCB",
+            "SHB",
+            "SSB",
+            "STB",
+            "TCB",
+            "TPB",
+            "VAB",
+            "VCB",
+            "VIB",
+            "VPB",
+        ],
+    },
+    {
+        id: "85",
+        name: "Bảo hiểm",
+        codes: ["BVH"],
+    },
+    {
+        id: "86",
+        name: "Bất động sản",
+        codes: [
+            "AAV",
+            "AGG",
+            "BCM",
+            "CEO",
+            "DIG",
+            "DRH",
+            "DXG",
+            "DXS",
+            "FIR",
+            "HDC",
+            "HDG",
+            "HPX",
+            "HQC",
+            "HTN",
+            "IDC",
+            "IJC",
+            "ITC",
+            "KBC",
+            "KDH",
+            "KHG",
+            "LDG",
+            "NLG",
+            "NTL",
+            "NVL",
+            "PDR",
+            "PIV",
+            "QCG",
+            "SCR",
+            "SIP",
+            "SZC",
+            "TAL",
+            "TCH",
+            "TDH",
+            "VHM",
+            "VIC",
+            "VPI",
+            "VRE",
+        ],
+    },
+    {
+        id: "87",
+        name: "Dịch vụ tài chính",
+        codes: [
+            "AAS",
+            "AGR",
+            "BSI",
+            "CTS",
+            "DSE",
+            "EVF",
+            "FTS",
+            "HCM",
+            "MBS",
+            "OGC",
+            "ORS",
+            "SBS",
+            "SHS",
+            "SSI",
+            "TCX",
+            "VCI",
+            "VCK",
+            "VDS",
+            "VIX",
+            "VND",
+            "VPX",
+        ],
+    },
+    {
+        id: "95",
+        name: "Công nghệ thông tin",
+        codes: ["CMG", "ELC", "FPT"],
     },
 ];
 
@@ -1087,6 +1163,7 @@ function App() {
     const [captureStatus, setCaptureStatus] = useState("");
     const [isImportingJson, setIsImportingJson] = useState(false);
     const [importJsonText, setImportJsonText] = useState("");
+    const [showCapturePopup, setShowCapturePopup] = useState(false);
 
     const syncEnabledRef = useRef(false);
     const webviewMapRef = useRef<Map<string, any>>(new Map());
@@ -1429,7 +1506,7 @@ function App() {
         }
     }
 
-    async function handleCaptureIndividual() {
+    async function handleCaptureIndividual(mode: "multi" | "default" = "multi") {
         // 1. Ask user for save folder
         const saveFolder = await (window as any).ipcRenderer.invoke(
             "select-save-folder",
@@ -1440,12 +1517,18 @@ function App() {
         const uniqueCodes = [...stockCodes]; // Respect current filters
         const pages = Math.ceil(uniqueCodes.length / ITEMS_PER_PAGE);
         const pdfDocs: { [key: string]: jsPDF } = {};
-        const periods = [
-            { label: "3M", fileSuffix: "3 tháng" },
-            { label: "6M", fileSuffix: "6 tháng" },
-            { label: "1Y", fileSuffix: "1 năm" },
-            { label: "5Y", fileSuffix: "5 năm" },
-        ];
+        const today = new Date();
+        const dateStr = `${today.getDate().toString().padStart(2, "0")}-${(today.getMonth() + 1).toString().padStart(2, "0")}-${today.getFullYear()}`;
+
+        const periods =
+            mode === "multi"
+                ? [
+                      { label: "3M", fileSuffix: "3 tháng" },
+                      { label: "6M", fileSuffix: "6 tháng" },
+                      { label: "1Y", fileSuffix: "1 năm" },
+                      { label: "5Y", fileSuffix: "5 năm" },
+                  ]
+                : [{ label: "1D", fileSuffix: dateStr }];
 
         try {
             for (let page = 1; page <= pages; page++) {
@@ -1505,48 +1588,56 @@ function App() {
                                 );
 
                                 // Add to PDF
-                                if (!pdfDocs[code]) {
-                                    pdfDocs[code] = new jsPDF({
-                                        orientation:
+                                if (mode !== "default") {
+                                    if (!pdfDocs[code]) {
+                                        pdfDocs[code] = new jsPDF({
+                                            orientation:
+                                                rect.width > rect.height
+                                                    ? "l"
+                                                    : "p",
+                                            unit: "px",
+                                            format: [rect.width, rect.height],
+                                        });
+                                    } else {
+                                        pdfDocs[code].addPage(
+                                            [rect.width, rect.height],
                                             rect.width > rect.height
                                                 ? "l"
                                                 : "p",
-                                        unit: "px",
-                                        format: [rect.width, rect.height],
-                                    });
-                                } else {
-                                    pdfDocs[code].addPage(
-                                        [rect.width, rect.height],
-                                        rect.width > rect.height ? "l" : "p",
+                                        );
+                                    }
+                                    pdfDocs[code].addImage(
+                                        `data:image/png;base64,${base64}`,
+                                        "PNG",
+                                        0,
+                                        0,
+                                        rect.width,
+                                        rect.height,
                                     );
                                 }
-                                pdfDocs[code].addImage(
-                                    `data:image/png;base64,${base64}`,
-                                    "PNG",
-                                    0,
-                                    0,
-                                    rect.width,
-                                    rect.height,
-                                );
                             }
                         }
                     }
                 }
 
                 // Save PDFs for codes on this page after all timeframes are done
-                for (const code of pageCodes) {
-                    if (pdfDocs[code]) {
-                        setCaptureStatus(`Đang xuất file PDF cho [${code}]...`);
-                        const pdfBase64 = pdfDocs[code]
-                            .output("datauristring")
-                            .split(",")[1];
-                        const pdfPath = `${saveFolder}\\${code}.pdf`;
-                        await (window as any).ipcRenderer.invoke(
-                            "save-screenshot",
-                            pdfPath,
-                            pdfBase64,
-                        );
-                        delete pdfDocs[code];
+                if (mode !== "default") {
+                    for (const code of pageCodes) {
+                        if (pdfDocs[code]) {
+                            setCaptureStatus(
+                                `Đang xuất file PDF cho [${code}]...`,
+                            );
+                            const pdfBase64 = pdfDocs[code]
+                                .output("datauristring")
+                                .split(",")[1];
+                            const pdfPath = `${saveFolder}\\${code}.pdf`;
+                            await (window as any).ipcRenderer.invoke(
+                                "save-screenshot",
+                                pdfPath,
+                                pdfBase64,
+                            );
+                            delete pdfDocs[code];
+                        }
                     }
                 }
             }
@@ -1690,7 +1781,7 @@ function App() {
                             </button>
                             <button
                                 className="btn btn-capture"
-                                onClick={handleCaptureIndividual}
+                                onClick={() => setShowCapturePopup(true)}
                                 disabled={isCapturing}
                                 title={
                                     isCapturing
@@ -1852,6 +1943,68 @@ function App() {
                     </div>
                 )}
             </div>
+
+            {/* Capture Options Popup */}
+            {showCapturePopup && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setShowCapturePopup(false)}
+                >
+                    <div
+                        className="modal-content capture-options-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-header">
+                            <h3>Lựa chọn chụp ảnh</h3>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowCapturePopup(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>Chọn phương thức chụp ảnh cho từng mã:</p>
+                            <div className="capture-options-grid">
+                                <button
+                                    className="capture-option-card"
+                                    onClick={() => {
+                                        setShowCapturePopup(false);
+                                        handleCaptureIndividual("multi");
+                                    }}
+                                >
+                                    <div className="option-icon">📅</div>
+                                    <div className="option-info">
+                                        <div className="option-title">
+                                            Theo chu kì
+                                        </div>
+                                        <div className="option-desc">
+                                            Chụp 4 mốc: 3M, 6M, 1Y, 5Y
+                                        </div>
+                                    </div>
+                                </button>
+                                <button
+                                    className="capture-option-card"
+                                    onClick={() => {
+                                        setShowCapturePopup(false);
+                                        handleCaptureIndividual("default");
+                                    }}
+                                >
+                                    <div className="option-icon">🖥️</div>
+                                    <div className="option-info">
+                                        <div className="option-title">
+                                            Màn mặc định
+                                        </div>
+                                        <div className="option-desc">
+                                            Chụp mốc mặc định (1D)
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
