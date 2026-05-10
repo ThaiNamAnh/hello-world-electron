@@ -193,7 +193,6 @@ const DEFAULT_GROUPS: StockGroup[] = [
             "ABB",
             "ACB",
             "BID",
-            "BVB",
             "CTG",
             "EIB",
             "HDB",
@@ -1506,7 +1505,9 @@ function App() {
         }
     }
 
-    async function handleCaptureIndividual(mode: "multi" | "default" = "multi") {
+    async function handleCaptureIndividual(
+        mode: "multi" | "default" = "multi",
+    ) {
         // 1. Ask user for save folder
         const saveFolder = await (window as any).ipcRenderer.invoke(
             "select-save-folder",
