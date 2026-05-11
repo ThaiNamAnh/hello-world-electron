@@ -1149,3 +1149,179 @@
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+/* ====== Capture Screen ====== */
+.capture-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.capture-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-shrink: 0;
+    height: 48px;
+}
+
+.capture-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.capture-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.capture-logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.capture-logo h1 {
+    font-size: 14px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+}
+
+.capture-stock-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.capture-stock-count span {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.capture-header-center {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    justify-content: center;
+}
+
+.capture-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.capture-status {
+    font-size: 11px;
+    color: #f59e0b;
+    font-weight: 500;
+    white-space: nowrap;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ====== Capture Content ====== */
+.capture-content {
+    flex: 1;
+    overflow: hidden;
+    padding: 8px;
+    background: var(--bg-primary);
+}
+
+.capture-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    height: 100%;
+}
+
+/* ====== Capture Card ====== */
+.capture-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+    position: relative;
+}
+
+.capture-card:hover {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.capture-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.1));
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.capture-code-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f59e0b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.capture-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.capture-card-body webview {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ====== Capture Empty State ====== */
+.capture-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--text-muted);
+}
+
+.capture-empty-icon {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.capture-empty p {
+    font-size: 14px;
+    text-align: center;
+}

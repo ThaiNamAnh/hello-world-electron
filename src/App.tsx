@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import "./App.css";
+import { CaptureScreen } from "./capture/CaptureScreen";
 
 const isSubWindow = window.location.hash === "#sub";
+const isCaptureWindow = window.location.hash === "#capture";
 
 const ITEMS_PER_PAGE = 6; // 6 mã chứng khoán/trang (3 cột x 2 hàng)
 const GRID_COLS = 3; // 3 cột
@@ -814,7 +816,7 @@ function WebviewCard({
                     setTimeout(function() { window.__isSyncedActionFA = false; }, 20);
                   })();
                 `);
-                                    } catch (e) {}
+                                    } catch (e) { }
                                 } else if (data.type === "wheel") {
                                     try {
                                         otherWv.executeJavaScript(`
@@ -833,7 +835,7 @@ function WebviewCard({
                     window.__isSyncedActionFA = false;
                   })();
                 `);
-                                    } catch (e) {}
+                                    } catch (e) { }
                                 } else {
                                     try {
                                         otherWv.executeJavaScript(`
@@ -865,12 +867,12 @@ function WebviewCard({
                     }
                   })();
                 `);
-                                    } catch (e) {}
+                                    } catch (e) { }
                                 }
                             }
                         },
                     );
-                } catch (err) {}
+                } catch (err) { }
             });
 
             webviewMapRef.current.set(`${code}_FA`, webviewFA);
@@ -925,8 +927,8 @@ function WebviewCard({
                         isFavorite && !isSubWindow
                             ? "Bỏ yêu thích"
                             : isSubWindow
-                              ? ""
-                              : "Thêm vào yêu thích"
+                                ? ""
+                                : "Thêm vào yêu thích"
                     }
                 >
                     {!isSubWindow && (
@@ -1524,11 +1526,11 @@ function App() {
         const periods =
             mode === "multi"
                 ? [
-                      { label: "3M", fileSuffix: "3 tháng" },
-                      { label: "6M", fileSuffix: "6 tháng" },
-                      { label: "1Y", fileSuffix: "1 năm" },
-                      { label: "5Y", fileSuffix: "5 năm" },
-                  ]
+                    { label: "3M", fileSuffix: "3 tháng" },
+                    { label: "6M", fileSuffix: "6 tháng" },
+                    { label: "1Y", fileSuffix: "1 năm" },
+                    { label: "5Y", fileSuffix: "5 năm" },
+                ]
                 : [{ label: "1D", fileSuffix: dateStr }];
 
         try {
@@ -1654,6 +1656,10 @@ function App() {
         }
     }
 
+    if (isCaptureWindow) {
+        return <CaptureScreen />;
+    }
+
     if (isSubWindow) {
         const activeCodes = subWindowCodes;
         const subGridRows = Math.ceil(activeCodes.length / GRID_COLS);
@@ -1677,8 +1683,8 @@ function App() {
                                     webviewMapRef={webviewMapRef}
                                     isSyncingRef={isSyncingRef}
                                     isFavorite={false}
-                                    onToggleFavorite={() => {}}
-                                    onDelete={() => {}}
+                                    onToggleFavorite={() => { }}
+                                    onDelete={() => { }}
                                     isDuplicate={false}
                                 />
                             ))}
@@ -1818,12 +1824,23 @@ function App() {
                     <button
                         className="btn btn-primary"
                         style={{ marginLeft: "auto", marginRight: 8 }}
-                        onClick={() =>
-                            window.ipcRenderer?.send("open-sub-window")
-                        }
-                        title="Bật màn hình phụ hiển thị mã Fireant"
+                        onClick={() => {
+                            // Tính toán danh sách mã để gửi sang capture window
+                            const allCodes = groups.flatMap((g) => g.codes);
+                            let uniqueCodes = [...new Set(allCodes)];
+                            if (filterMode === "favorites") {
+                                uniqueCodes = uniqueCodes.filter((code) =>
+                                    favoriteCodes.includes(code),
+                                );
+                            }
+                            window.ipcRenderer?.send(
+                                "open-capture-window",
+                                uniqueCodes,
+                            );
+                        }}
+                        title="Mở màn hình chụp ảnh riêng (3 cột, có KL + GD Khối ngoại)"
                     >
-                        🖥️ Mở màn phụ
+                        📷 Màn chụp ảnh
                     </button>
 
                     <button

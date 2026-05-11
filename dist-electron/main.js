@@ -10,6 +10,8 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 let subWin = null;
+let captureWin = null;
+let pendingCaptureState = [];
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
@@ -56,6 +58,40 @@ ipcMain.on("sync-state", (_event, state) => {
     subWin.webContents.send("sync-state", state);
   }
 });
+ipcMain.on("open-capture-window", (_event, codes) => {
+  pendingCaptureState = codes || [];
+  if (captureWin) {
+    if (captureWin.isMinimized()) captureWin.restore();
+    captureWin.focus();
+    captureWin.webContents.send("sync-capture-state", pendingCaptureState);
+    return;
+  }
+  captureWin = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    webPreferences: {
+      preload: path.join(__dirname$1, "preload.mjs"),
+      webviewTag: true
+    }
+  });
+  captureWin.maximize();
+  if (VITE_DEV_SERVER_URL) {
+    captureWin.loadURL(VITE_DEV_SERVER_URL + "#capture");
+  } else {
+    captureWin.loadFile(path.join(RENDERER_DIST, "index.html"), { hash: "capture" });
+  }
+  captureWin.on("closed", () => {
+    captureWin = null;
+  });
+});
+ipcMain.handle("get-capture-state", () => {
+  return pendingCaptureState;
+});
+ipcMain.on("sync-capture-state", (_event, state) => {
+  pendingCaptureState = state;
+  if (captureWin) {
+    captureWin.webContents.send("sync-capture-state", state);
+  }
+});
 ipcMain.handle("select-save-folder", async () => {
   const result = await dialog.showOpenDialog({
     properties: ["openDirectory"],
@@ -75,9 +111,10 @@ ipcMain.handle("save-screenshot", async (_event, filePath, base64Data) => {
     return { success: false, error: err.message };
   }
 });
-ipcMain.handle("capture-page", async (_event, rect) => {
-  if (!win) return null;
-  const image = rect ? await win.webContents.capturePage(rect) : await win.webContents.capturePage();
+ipcMain.handle("capture-page", async (event, rect) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  if (!senderWindow) return null;
+  const image = rect ? await senderWindow.webContents.capturePage(rect) : await senderWindow.webContents.capturePage();
   return image.toPNG().toString("base64");
 });
 app.on("window-all-closed", () => {

@@ -15,6 +15,8 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 let win: BrowserWindow | null
 let subWin: BrowserWindow | null = null
+let captureWin: BrowserWindow | null = null
+let pendingCaptureState: string[] = []
 
 function createWindow() {
   win = new BrowserWindow({
@@ -76,6 +78,52 @@ ipcMain.on('sync-state', (_event, state) => {
   }
 })
 
+// ── IPC: Open Capture Window ──
+ipcMain.on('open-capture-window', (_event, codes: string[]) => {
+  pendingCaptureState = codes || []
+
+  if (captureWin) {
+    if (captureWin.isMinimized()) captureWin.restore()
+    captureWin.focus()
+    // Re-send state in case codes changed
+    captureWin.webContents.send('sync-capture-state', pendingCaptureState)
+    return
+  }
+
+  captureWin = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      webviewTag: true,
+    },
+  })
+
+  captureWin.maximize()
+
+  if (VITE_DEV_SERVER_URL) {
+    captureWin.loadURL(VITE_DEV_SERVER_URL + '#capture')
+  } else {
+    captureWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'capture' })
+  }
+
+  captureWin.on('closed', () => {
+    captureWin = null
+  })
+})
+
+// ── IPC: Get Capture State (invoked by capture window on load) ──
+ipcMain.handle('get-capture-state', () => {
+  return pendingCaptureState
+})
+
+// ── IPC: Sync Capture State (from main window to capture window) ──
+ipcMain.on('sync-capture-state', (_event, state: string[]) => {
+  pendingCaptureState = state
+  if (captureWin) {
+    captureWin.webContents.send('sync-capture-state', state)
+  }
+})
+
 // ── IPC: Select folder to save screenshots ──
 ipcMain.handle('select-save-folder', async () => {
   const result = await dialog.showOpenDialog({
@@ -100,11 +148,13 @@ ipcMain.handle('save-screenshot', async (_event, filePath: string, base64Data: s
 })
 
 // ── IPC: Capture the BrowserWindow content area ──
-ipcMain.handle('capture-page', async (_event, rect?: { x: number, y: number, width: number, height: number }) => {
-  if (!win) return null
+// Tự động detect window nào gửi request để capture đúng window
+ipcMain.handle('capture-page', async (event, rect?: { x: number, y: number, width: number, height: number }) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender)
+  if (!senderWindow) return null
   const image = rect
-    ? await win.webContents.capturePage(rect)
-    : await win.webContents.capturePage()
+    ? await senderWindow.webContents.capturePage(rect)
+    : await senderWindow.webContents.capturePage()
   return image.toPNG().toString('base64')
 })
 
